@@ -61,7 +61,6 @@ export function buildScheduleMessage(
 
   if (!items.length) content.push('\n- 当天暂无排程')
   if (items.length > maxItems) content.push(`\n- 另有 ${items.length - maxItems} 项未显示`)
-  content.push('\n\n其他日期：baha.schedule 1-7')
   return content
 }
 
