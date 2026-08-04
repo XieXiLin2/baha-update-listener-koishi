@@ -1,0 +1,41 @@
+{
+  "name": "koishi-plugin-baha-update-listener",
+  "version": "0.1.0",
+  "description": "Monitor Bahamut Anime updates and provide schedule and anime lookup commands for Koishi.",
+  "keywords": [
+    "koishi",
+    "plugin",
+    "bahamut",
+    "anime"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "koishi": "^4.18.11"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "koishi": "^4.18.11",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  },
+  "koishi": {
+    "description": {
+      "en": "Monitor Bahamut Anime announcements and ON AIR updates, with schedule and anime lookup commands.",
+      "zh": "监听巴哈姆特动画疯公告与 ON AIR 更新，并提供排程和番剧详情查询。"
+    }
+  }
+}
