@@ -14,7 +14,7 @@ export function buildAnnouncementMessage(announcement: string): h.Fragment {
 }
 
 export function buildOnAirMessage(items: AnimeItem[]): h.Fragment {
-  const content: h.Fragment = [h('b', {}, 'ON AIR >>'), '\n']
+  const content: h.Fragment = [h('b', {}, 'ON AIR >> [Baha]'), '\n']
   for (const item of items) {
     const info = formatOnAirItem(item)
     if (!info.videoSn) continue
