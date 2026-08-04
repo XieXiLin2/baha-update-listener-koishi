@@ -1,11 +1,12 @@
 {
   "name": "koishi-plugin-baha-update-listener",
-  "version": "0.1.0",
-  "description": "Monitor Bahamut Anime updates and provide schedule and anime lookup commands for Koishi.",
+  "version": "0.2.0",
+  "description": "Monitor Bahamut Anime and ABEMA updates with schedule and recent update commands for Koishi.",
   "keywords": [
     "koishi",
     "plugin",
     "bahamut",
+    "abema",
     "anime"
   ],
   "main": "lib/index.js",
@@ -34,8 +35,8 @@
   },
   "koishi": {
     "description": {
-      "en": "Monitor Bahamut Anime announcements and ON AIR updates, with schedule and anime lookup commands.",
-      "zh": "監聽巴哈姆特動畫瘋公告與 ON AIR 更新，並提供排程和番劇詳情查詢。"
+      "en": "Monitor Bahamut Anime and ABEMA updates, with schedule and recent update commands.",
+      "zh": "監聽巴哈姆特動畫瘋與 ABEMA 動畫更新，並提供排程、最近更新與公告查詢。"
     }
   }
 }

@@ -37,9 +37,39 @@ describe('StateStore', () => {
     await store.save()
 
     expect(JSON.parse(await readFile(file, 'utf8'))).toMatchObject({
-      version: 1,
+      version: 2,
       initialized: true,
       announce: 'second',
+    })
+  })
+
+  it('migrates version 1 state without losing Baha data', async () => {
+    const file = await makeStateFile()
+    await writeFile(file, JSON.stringify({
+      version: 1,
+      initialized: true,
+      announce: '舊公告',
+      newAnimeDigest: 'digest',
+      newAnimeList: [{ videoSn: 123 }],
+    }), 'utf8').catch(async () => {
+      const store = new StateStore(file, logger)
+      await store.save()
+      await writeFile(file, JSON.stringify({
+        version: 1,
+        initialized: true,
+        announce: '舊公告',
+        newAnimeDigest: 'digest',
+        newAnimeList: [{ videoSn: 123 }],
+      }), 'utf8')
+    })
+
+    const store = new StateStore(file, logger)
+    await expect(store.load()).resolves.toMatchObject({
+      version: 2,
+      announce: '舊公告',
+      newAnimeList: [{ videoSn: 123 }],
+      abemaInitialized: false,
+      abemaSchedule: [],
     })
   })
 
@@ -56,4 +86,3 @@ describe('StateStore', () => {
     expect(logger.warn).toHaveBeenCalledOnce()
   })
 })
-

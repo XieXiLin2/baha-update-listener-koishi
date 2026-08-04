@@ -11,6 +11,9 @@ export interface Config {
   requestTimeoutSeconds: number
   maxPushItems: number
   maxScheduleItems: number
+  enableAbema: boolean
+  abemaPollIntervalSeconds: number
+  abemaMaxPushItems: number
 }
 
 const TargetSchema: Schema<PushTarget> = Schema.object({
@@ -64,4 +67,19 @@ export const Config: Schema<Config> = Schema.object({
     .step(1)
     .default(30)
     .description('單日排程最多顯示的條目數。'),
+  enableAbema: Schema.boolean()
+    .default(true)
+    .description('啟用 ABEMA 新作動畫排程查詢與更新推送。'),
+  abemaPollIntervalSeconds: Schema.number()
+    .min(60)
+    .max(86400)
+    .step(1)
+    .default(300)
+    .description('ABEMA 排程輪詢間隔，單位為秒。'),
+  abemaMaxPushItems: Schema.number()
+    .min(1)
+    .max(30)
+    .step(1)
+    .default(12)
+    .description('每次 ABEMA 更新通知最多包含的條目數。'),
 })

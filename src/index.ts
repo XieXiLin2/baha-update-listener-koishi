@@ -2,6 +2,14 @@ import { join } from 'node:path'
 
 import { Context, Logger } from 'koishi'
 
+import { AbemaApiClient } from './abema-api'
+import {
+  extractAbemaAnimeSchedule,
+  latestAbemaReleases,
+  selectAbemaScheduleDate,
+} from './abema-formatters'
+import { buildAbemaLatestMessage, buildAbemaScheduleMessage } from './abema-messages'
+import { AbemaPollerService } from './abema-poller'
 import { GamerApiClient } from './api'
 import { Config as ConfigSchema, type Config as PluginConfig } from './config'
 import {
@@ -9,14 +17,9 @@ import {
   currentDayKey,
   extractAnnouncement,
   extractSchedule,
-  formatVideoDetail,
   parseDayKey,
 } from './formatters'
-import {
-  buildAnnouncementMessage,
-  buildScheduleMessage,
-  buildVideoDetailMessage,
-} from './messages'
+import { buildAnnouncementMessage, buildScheduleMessage } from './messages'
 import { PollerService } from './poller'
 import { StateStore } from './state'
 import { asRecord } from './types'
@@ -26,12 +29,15 @@ export const Config = ConfigSchema
 export type Config = PluginConfig
 
 export const usage = `
-設定推送目標後，插件會定時監聽巴哈姆特動畫瘋公告和 ON AIR 更新。首次啟動只記錄目前狀態，不推送歷史內容。
+設定推送目標後，插件會定時監聽巴哈姆特動畫瘋及 ABEMA 新作動畫更新。首次啟動只記錄目前狀態，不推送歷史內容。
 
 可用指令：
+- baha
 - baha.announcement
 - baha.schedule [1-7/星期]
-- baha.anime <sn>
+- abema
+- abema.latest [數量]
+- abema.schedule [日期]
 `
 
 export function apply(ctx: Context, config: PluginConfig): void {
@@ -43,20 +49,54 @@ export function apply(ctx: Context, config: PluginConfig): void {
     webUserAgent: config.webUserAgent,
     requestTimeout: config.requestTimeoutSeconds,
   })
+  const abemaApi = new AbemaApiClient(ctx.http, {
+    requestTimeout: config.requestTimeoutSeconds,
+  })
   const stateFile = join(ctx.baseDir, 'data', name, 'state.json')
   const store = new StateStore(stateFile, logger)
   const poller = new PollerService(ctx, logger, api, store, {
     targets: config.targets,
     maxPushItems: config.maxPushItems,
   })
+  const abemaPoller = new AbemaPollerService(ctx, logger, abemaApi, store, {
+    targets: config.targets,
+    maxPushItems: config.abemaMaxPushItems,
+    timezone: config.timezone,
+  })
 
-  ctx.command('baha', '巴哈姆特動畫瘋查詢')
-    .action(() => [
-      '可用指令：',
-      '\nbaha.announcement - 檢視目前公告',
-      '\nbaha.schedule [星期] - 檢視更新排程',
-      '\nbaha.anime <sn> - 查詢番劇詳情',
-    ].join(''))
+  const queryBahaSchedule = async (day?: string) => {
+    const dayKey = day ? parseDayKey(day) : currentDayKey(config.timezone)
+    if (!dayKey) return '星期參數無效，請使用 1-7、mon-sun、週一至週日。'
+
+    try {
+      const schedule = extractSchedule(await api.fetchIndex())
+      if (!Object.values(schedule).some((items) => items?.length)) return '未取得排程資訊。'
+      return buildScheduleMessage(dayKey, schedule[dayKey] ?? [], config.maxScheduleItems)
+    } catch (error) {
+      logger.warn('查詢排程失敗：%s', formatError(error))
+      return formatQueryError(error)
+    }
+  }
+
+  const queryAbemaSchedule = async (date?: string) => {
+    try {
+      const schedule = extractAbemaAnimeSchedule(await abemaApi.fetchAnimeSchedule())
+      const selected = selectAbemaScheduleDate(schedule, date)
+      if (!selected) return '日期參數無效，請使用今天、明天、M/D 或 YYYY-MM-DD。'
+      return buildAbemaScheduleMessage(
+        selected.dateKey,
+        selected.items,
+        config.maxScheduleItems,
+        config.timezone,
+      )
+    } catch (error) {
+      logger.warn('查詢 ABEMA 排程失敗：%s', formatError(error))
+      return formatQueryError(error)
+    }
+  }
+
+  ctx.command('baha', '檢視動畫瘋當日更新排程')
+    .action(() => queryBahaSchedule())
 
   ctx.command('baha.announcement', '檢視動畫瘋目前公告')
     .alias('announcement')
@@ -74,36 +114,34 @@ export function apply(ctx: Context, config: PluginConfig): void {
     .alias('schedule')
     .example('baha.schedule')
     .example('baha.schedule 週五')
-    .action(async (_, day) => {
-      const dayKey = day ? parseDayKey(day) : currentDayKey(config.timezone)
-      if (!dayKey) return '星期參數無效，請使用 1-7、mon-sun、週一至週日。'
+    .action((_, day) => queryBahaSchedule(day))
 
+  ctx.command('abema', '檢視 ABEMA 當日新作動畫排程')
+    .action(() => queryAbemaSchedule())
+
+  ctx.command('abema.latest [limit:number]', '檢視 ABEMA 最近動畫更新')
+    .example('abema.latest')
+    .example('abema.latest 10')
+    .action(async (_, rawLimit) => {
+      const limit = normalizeLimit(rawLimit, 10, config.maxScheduleItems)
       try {
-        const schedule = extractSchedule(await api.fetchIndex())
-        if (!Object.values(schedule).some((items) => items?.length)) return '未取得排程資訊。'
-        return buildScheduleMessage(dayKey, schedule[dayKey] ?? [], config.maxScheduleItems)
+        const schedule = extractAbemaAnimeSchedule(await abemaApi.fetchAnimeSchedule())
+        return buildAbemaLatestMessage(
+          latestAbemaReleases(schedule, limit),
+          limit,
+          config.timezone,
+        )
       } catch (error) {
-        logger.warn('查詢排程失敗：%s', formatError(error))
+        logger.warn('查詢 ABEMA 最近更新失敗：%s', formatError(error))
         return formatQueryError(error)
       }
     })
 
-  ctx.command('baha.anime <sn:string>', '查詢動畫瘋影片詳情')
-    .alias('anime')
-    .example('baha.anime 47927')
-    .action(async (_, rawSn) => {
-      if (rawSn?.toLowerCase() === 'schedule') return '請改用 baha.schedule。'
-      const sn = parsePositiveInteger(rawSn)
-      if (!sn) return '用法：baha.anime <正整數 sn>'
-
-      try {
-        const detail = formatVideoDetail(await api.fetchVideo(sn), config.timezone)
-        return buildVideoDetailMessage(detail)
-      } catch (error) {
-        logger.warn('查詢番劇詳情失敗：%s', formatError(error))
-        return formatQueryError(error)
-      }
-    })
+  ctx.command('abema.schedule [date:string]', '檢視 ABEMA 新作動畫排程')
+    .example('abema.schedule')
+    .example('abema.schedule 明天')
+    .example('abema.schedule 8/5')
+    .action((_, date) => queryAbemaSchedule(date))
 
   ctx.on('ready', async () => {
     await store.load()
@@ -113,15 +151,18 @@ export function apply(ctx: Context, config: PluginConfig): void {
     }
 
     ctx.setInterval(() => void poller.poll(), config.pollIntervalSeconds * 1000)
-    await poller.poll()
+    const initialPolls = [poller.poll()]
+    if (config.enableAbema) {
+      ctx.setInterval(() => void abemaPoller.poll(), config.abemaPollIntervalSeconds * 1000)
+      initialPolls.push(abemaPoller.poll())
+    }
+    await Promise.all(initialPolls)
   })
 }
 
-function parsePositiveInteger(raw?: string): number | undefined {
-  if (!raw || !/^\d+$/.test(raw)) return
-  const value = Number(raw)
-  if (!Number.isSafeInteger(value) || value <= 0) return
-  return value
+function normalizeLimit(value: number | undefined, fallback: number, maximum: number): number {
+  if (!Number.isSafeInteger(value) || !value || value < 1) return Math.min(fallback, maximum)
+  return Math.min(value, maximum)
 }
 
 function formatQueryError(error: unknown): string {

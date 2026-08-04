@@ -19,10 +19,6 @@ export interface BahaIndexResponse extends UnknownRecord {
   data?: unknown
 }
 
-export interface BahaVideoResponse extends UnknownRecord {
-  data?: unknown
-}
-
 export interface PushTarget {
   platform: string
   channelId: string
@@ -30,12 +26,32 @@ export interface PushTarget {
   guildId?: string
 }
 
+export interface AbemaAnimeItem {
+  key: string
+  contentId: string
+  episodeId: string
+  seriesId: string
+  title: string
+  seriesTitle: string
+  dateLabel: string
+  releaseAt: number
+  endAt: number
+  contentType: 'program' | 'slot'
+  availability: 'free' | 'premium' | 'unknown'
+  badge: string
+  image: string
+}
+
 export interface PersistedState {
-  version: 1
+  version: 2
   initialized: boolean
   announce: string
   newAnimeDigest: string
   newAnimeList: AnimeItem[]
+  abemaInitialized: boolean
+  abemaScheduleDigest: string
+  abemaSchedule: AbemaAnimeItem[]
+  abemaReleased: Record<string, string>
 }
 
 export function asRecord(value: unknown): UnknownRecord | undefined {
@@ -53,3 +69,46 @@ export function asAnimeItems(value: unknown): AnimeItem[] {
   return value.filter((item): item is AnimeItem => !!asRecord(item))
 }
 
+export function asAbemaAnimeItems(value: unknown): AbemaAnimeItem[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    const record = asRecord(item)
+    const key = asString(record?.key)
+    const contentType = record?.contentType === 'slot' ? 'slot' : 'program'
+    if (!record || !key) return []
+
+    const availability = record.availability === 'free' || record.availability === 'premium'
+      ? record.availability
+      : 'unknown'
+    return [{
+      key,
+      contentId: asString(record.contentId),
+      episodeId: asString(record.episodeId),
+      seriesId: asString(record.seriesId),
+      title: asString(record.title),
+      seriesTitle: asString(record.seriesTitle),
+      dateLabel: asString(record.dateLabel),
+      releaseAt: asFiniteNumber(record.releaseAt),
+      endAt: asFiniteNumber(record.endAt),
+      contentType,
+      availability,
+      badge: asString(record.badge),
+      image: asString(record.image),
+    }]
+  })
+}
+
+export function asStringRecord(value: unknown): Record<string, string> {
+  const record = asRecord(value)
+  if (!record) return {}
+  return Object.fromEntries(
+    Object.entries(record)
+      .map(([key, item]) => [key, asString(item)] as const)
+      .filter((entry) => entry[0] && entry[1]),
+  )
+}
+
+function asFiniteNumber(value: unknown): number {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : 0
+}

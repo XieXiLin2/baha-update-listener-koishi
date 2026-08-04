@@ -5,7 +5,6 @@ import {
   extractNewAnimeList,
   extractNewAnimeUpdates,
   extractSchedule,
-  formatVideoDetail,
   newAnimeDigest,
   parseDayKey,
 } from '../src/formatters'
@@ -81,33 +80,5 @@ describe('weekday parsing', () => {
     const nearMidnight = new Date('2026-08-02T23:30:00.000Z')
     expect(currentDayKey('UTC', nearMidnight)).toBe('7')
     expect(currentDayKey('Asia/Taipei', nearMidnight)).toBe('1')
-  })
-})
-
-describe('video detail formatting', () => {
-  it('normalizes titles, episode numbers and airing status', () => {
-    const detail = formatVideoDetail({
-      data: {
-        video: {
-          title: '測試番劇 [9]',
-          video_sn: 99,
-          duration: 24,
-          quality: '1080p',
-        },
-        anime: {
-          anime_sn: 10,
-          volume_index: 8,
-          total_volume: 12,
-          season_end: '2026-09-01',
-          tags: ['奇幻', '冒險'],
-        },
-      },
-    }, 'Asia/Taipei', new Date('2026-08-05T00:00:00.000Z'))
-
-    expect(detail.title).toBe('測試番劇')
-    expect(detail.videoSn).toBe('99')
-    expect(detail.animeSn).toBe('10')
-    expect(detail.lines).toContain('集數：第 9 集 / 連載中')
-    expect(detail.lines).toContain('標籤：奇幻、冒險')
   })
 })

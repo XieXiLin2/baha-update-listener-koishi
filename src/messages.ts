@@ -1,7 +1,7 @@
 import { h } from 'koishi'
 
 import type { AnimeItem } from './types'
-import type { DayKey, VideoDetail } from './formatters'
+import type { DayKey } from './formatters'
 import { formatOnAirItem, WEEKDAY_NAMES } from './formatters'
 
 export function buildAnnouncementMessage(announcement: string): h.Fragment {
@@ -61,27 +61,5 @@ export function buildScheduleMessage(
 
   if (!items.length) content.push('\n- 當天暫無排程')
   if (items.length > maxItems) content.push(`\n- 另有 ${items.length - maxItems} 項未顯示`)
-  return content
-}
-
-export function buildVideoDetailMessage(detail: VideoDetail): h.Fragment {
-  const content: h.Fragment = []
-  if (detail.cover) content.push(h('img', { src: detail.cover }), '\n')
-  content.push(h('b', {}, detail.title))
-  if (detail.lines.length) content.push('\n', detail.lines.join('\n'))
-
-  const links: h.Fragment = []
-  if (detail.videoSn) {
-    links.push(h('a', {
-      href: `https://ani.gamer.com.tw/animeVideo.php?sn=${encodeURIComponent(detail.videoSn)}`,
-    }, '觀看最新一集'))
-  }
-  if (detail.animeSn) {
-    if (links.length) links.push(' | ')
-    links.push(h('a', {
-      href: `https://ani.gamer.com.tw/animeRef.php?sn=${encodeURIComponent(detail.animeSn)}`,
-    }, '檢視番劇詳情'))
-  }
-  if (links.length) content.push('\n\n', ...links)
   return content
 }
