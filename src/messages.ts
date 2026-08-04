@@ -6,7 +6,7 @@ import { formatOnAirItem, WEEKDAY_NAMES } from './formatters'
 
 export function buildAnnouncementMessage(announcement: string): h.Fragment {
   return [
-    h('b', {}, '巴哈姆特动画疯'),
+    h('b', {}, '巴哈姆特動畫瘋'),
     '\n',
     announcement,
     '\n\n#announcement #baha',
@@ -37,7 +37,7 @@ export function buildScheduleMessage(
 ): h.Fragment {
   const content: h.Fragment = [h('b', {}, `【${WEEKDAY_NAMES[day]}】`)]
   for (const item of items.slice(0, maxItems)) {
-    const title = String(item.title ?? '').trim() || '(无标题)'
+    const title = String(item.title ?? '').trim() || '(無標題)'
     const rawTime = String(item.scheduleTime ?? '').trim()
     const timeText = /^\d{1,2}:\d{2}/.exec(rawTime)?.[0].padStart(5, '0') ?? '--:--'
     const videoSn = String(item.videoSn ?? item.video_sn ?? '').trim()
@@ -55,12 +55,12 @@ export function buildScheduleMessage(
     if (animeSn) {
       content.push(' (', h('a', {
         href: `https://ani.gamer.com.tw/animeRef.php?sn=${encodeURIComponent(animeSn)}`,
-      }, '详情'), ')')
+      }, '詳情'), ')')
     }
   }
 
-  if (!items.length) content.push('\n- 当天暂无排程')
-  if (items.length > maxItems) content.push(`\n- 另有 ${items.length - maxItems} 项未显示`)
+  if (!items.length) content.push('\n- 當天暫無排程')
+  if (items.length > maxItems) content.push(`\n- 另有 ${items.length - maxItems} 項未顯示`)
   return content
 }
 
@@ -74,15 +74,14 @@ export function buildVideoDetailMessage(detail: VideoDetail): h.Fragment {
   if (detail.videoSn) {
     links.push(h('a', {
       href: `https://ani.gamer.com.tw/animeVideo.php?sn=${encodeURIComponent(detail.videoSn)}`,
-    }, '观看最新一集'))
+    }, '觀看最新一集'))
   }
   if (detail.animeSn) {
     if (links.length) links.push(' | ')
     links.push(h('a', {
       href: `https://ani.gamer.com.tw/animeRef.php?sn=${encodeURIComponent(detail.animeSn)}`,
-    }, '查看番剧详情'))
+    }, '檢視番劇詳情'))
   }
   if (links.length) content.push('\n\n', ...links)
   return content
 }
-

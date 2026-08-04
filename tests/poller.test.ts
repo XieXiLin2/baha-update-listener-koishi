@@ -47,7 +47,7 @@ describe('PollerService', () => {
     await store.load()
 
     const fetchIndex = vi.fn()
-      .mockResolvedValueOnce(indexSnapshot('旧公告', '第 1 集'))
+      .mockResolvedValueOnce(indexSnapshot('舊公告', '第 1 集'))
       .mockResolvedValueOnce(indexSnapshot('新公告', '第 2 集'))
     const api = { fetchIndex } as unknown as GamerApiClient
     const poller = new PollerService(ctx, logger, api, store, {
@@ -62,7 +62,7 @@ describe('PollerService', () => {
     expect(sendMessage).not.toHaveBeenCalled()
     expect(store.state).toMatchObject({
       initialized: true,
-      announce: '旧公告',
+      announce: '舊公告',
     })
 
     await poller.poll()
@@ -84,7 +84,7 @@ function indexSnapshot(announce: string, volume: string) {
         date: [{
           videoSn: 123,
           animeSn: 456,
-          title: '测试作品',
+          title: '測試作品',
           volume,
           upTime: '2026-08-05 12:00:00',
           upTimeHours: '12:00',

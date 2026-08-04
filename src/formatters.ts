@@ -4,13 +4,13 @@ import type { AnimeItem, BahaIndexResponse, BahaVideoResponse } from './types'
 import { asAnimeItems, asRecord, asString } from './types'
 
 export const WEEKDAY_NAMES = {
-  '1': '周一',
-  '2': '周二',
-  '3': '周三',
-  '4': '周四',
-  '5': '周五',
-  '6': '周六',
-  '7': '周日',
+  '1': '週一',
+  '2': '週二',
+  '3': '週三',
+  '4': '週四',
+  '5': '週五',
+  '6': '週六',
+  '7': '週日',
 } as const
 
 export type DayKey = keyof typeof WEEKDAY_NAMES
@@ -98,7 +98,7 @@ export function sortOnAirItems(items: AnimeItem[]): AnimeItem[] {
 
 export function formatOnAirItem(item: AnimeItem): OnAirItem {
   return {
-    title: asString(item.title) || '(无标题)',
+    title: asString(item.title) || '(無標題)',
     animeSn: asString(item.animeSn ?? item.anime_sn),
     videoSn: asString(item.videoSn ?? item.video_sn),
     timeText: asString(item.upTimeHours) || '--:--',
@@ -114,38 +114,38 @@ export function formatVideoDetail(
   const data = asRecord(response.data)
   const video = asRecord(data?.video) ?? {}
   const anime = asRecord(data?.anime) ?? {}
-  const title = cleanTitle(asString(video.title ?? anime.title) || '(无标题)')
+  const title = cleanTitle(asString(video.title ?? anime.title) || '(無標題)')
   const cover = asString(video.cover ?? anime.cover)
   const videoSn = asString(video.video_sn ?? video.videoSn)
   const animeSn = asString(anime.anime_sn ?? anime.animeSn)
   const lines: string[] = []
 
   if (video.duration !== undefined && video.duration !== null) {
-    lines.push(`时长：${String(video.duration)} 分钟`)
+    lines.push(`時長：${String(video.duration)} 分鐘`)
   }
-  if (asString(video.quality)) lines.push(`画质：${asString(video.quality)}`)
-  if (asString(anime.upload_time)) lines.push(`更新时间：${asString(anime.upload_time)}`)
+  if (asString(video.quality)) lines.push(`畫質：${asString(video.quality)}`)
+  if (asString(anime.upload_time)) lines.push(`更新時間：${asString(anime.upload_time)}`)
 
   const volumeIndex = toFiniteNumber(anime.volume_index)
   const totalVolume = toFiniteNumber(anime.total_volume)
   if (volumeIndex !== undefined && totalVolume !== undefined) {
     const seasonEnd = asString(anime.season_end)
-    const status = isAiring(seasonEnd, timezone, now) ? '连载中' : `共 ${totalVolume} 集`
-    lines.push(`集数：第 ${volumeIndex + 1} 集 / ${status}`)
+    const status = isAiring(seasonEnd, timezone, now) ? '連載中' : `共 ${totalVolume} 集`
+    lines.push(`集數：第 ${volumeIndex + 1} 集 / ${status}`)
   }
 
-  if (asString(anime.publisher)) lines.push(`发行：${asString(anime.publisher)}`)
-  if (asString(anime.maker)) lines.push(`制作：${asString(anime.maker)}`)
-  if (anime.score !== undefined && anime.score !== null) lines.push(`评分：${String(anime.score)}`)
+  if (asString(anime.publisher)) lines.push(`發行：${asString(anime.publisher)}`)
+  if (asString(anime.maker)) lines.push(`製作：${asString(anime.maker)}`)
+  if (anime.score !== undefined && anime.score !== null) lines.push(`評分：${String(anime.score)}`)
 
   const tags = Array.isArray(anime.tags) ? anime.tags.map(asString).filter(Boolean) : []
-  if (tags.length) lines.push(`标签：${tags.join('、')}`)
-  if (asString(video.rating_desc)) lines.push(`分级：${asString(video.rating_desc)}`)
+  if (tags.length) lines.push(`標籤：${tags.join('、')}`)
+  if (asString(video.rating_desc)) lines.push(`分級：${asString(video.rating_desc)}`)
 
   const content = asString(anime.content)
   if (content) {
     const summary = content.length > 450 ? `${content.slice(0, 450)}...` : content
-    lines.push('', '简介', summary)
+    lines.push('', '簡介', summary)
   }
 
   return { title, cover, videoSn, animeSn, lines }
@@ -212,4 +212,3 @@ function isAiring(seasonEnd: string, timezone: string, now: Date): boolean {
   const todayKey = `${value('year')}-${value('month')}-${value('day')}`
   return endKey >= todayKey
 }
-

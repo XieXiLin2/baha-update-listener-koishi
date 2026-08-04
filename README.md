@@ -1,61 +1,61 @@
 # koishi-plugin-baha-update-listener
 
-巴哈姆特动画疯更新监听 Koishi 插件。由原 `baha-update-listener` Telegram Bot 重写而来，查询和推送均使用 Koishi 的跨平台消息接口。
+巴哈姆特動畫瘋更新監聽 Koishi 插件。由原 `baha-update-listener` Telegram Bot 重寫而來，查詢和推送均使用 Koishi 的跨平台訊息介面。
 
 ## 功能
 
-- 定时轮询动画疯首页 API，监听公告和 ON AIR 条目变化。
-- 首次启动仅建立状态基线，不推送现有历史内容。
-- 将更新推送到多个平台、机器人和频道。
-- 查询当前公告、每周更新排程和指定影片详情。
-- 状态写入 `data/baha-update-listener/state.json`，重启后仍可精确比较更新。
-- 支持移动端请求头和自定义 Web User-Agent。
+- 定時輪詢動畫瘋首頁 API，監聽公告和 ON AIR 條目變化。
+- 首次啟動僅建立狀態基線，不推送現有歷史內容。
+- 將更新推送到多個平台、機器人和頻道。
+- 查詢目前公告、每週更新排程和指定影片詳情。
+- 狀態寫入 `data/baha-update-listener/state.json`，重新啟動後仍可精確比較更新。
+- 支援行動端請求標頭和自訂 Web User-Agent。
 
-## 环境要求
+## 環境需求
 
 - Node.js 20 或更高版本
-- Koishi 4.18.11 或兼容版本
+- Koishi 4.18.11 或相容版本
 
-## 安装与构建
+## 安裝與建置
 
 ```powershell
 npm install
 npm run build
 ```
 
-在 Koishi 应用目录中安装本地插件包：
+在 Koishi 應用程式目錄中安裝本機插件套件：
 
 ```powershell
 npm install D:\Codes\baha-update-listener-koishi
 ```
 
-也可以将本仓库放入 Koishi 工作区的 `plugins` 目录后，通过控制台启用。
+也可以將本儲存庫放入 Koishi 工作區的 `plugins` 目錄後，透過主控台啟用。
 
-## 配置
+## 設定
 
-核心配置如下：
+核心設定如下：
 
-| 配置项 | 默认值 | 说明 |
+| 設定項 | 預設值 | 說明 |
 | --- | --- | --- |
-| `targets` | `[]` | 主动推送目标；留空时只启用查询指令 |
-| `pollIntervalSeconds` | `60` | 轮询间隔，最小 15 秒 |
-| `timezone` | `Asia/Taipei` | IANA 时区名 |
-| `useMobileApi` | `true` | 是否使用动画疯 Android 请求头 |
-| `webUserAgent` | Chrome UA | Web 请求头模式使用的 User-Agent |
-| `requestTimeoutSeconds` | `20` | API 请求超时秒数 |
-| `maxPushItems` | `12` | 单次 ON AIR 通知条目上限 |
-| `maxScheduleItems` | `30` | 单日排程显示上限 |
+| `targets` | `[]` | 主動推送目標；留空時只啟用查詢指令 |
+| `pollIntervalSeconds` | `60` | 輪詢間隔，最短 15 秒 |
+| `timezone` | `Asia/Taipei` | IANA 時區名稱 |
+| `useMobileApi` | `true` | 是否使用動畫瘋 Android 請求標頭 |
+| `webUserAgent` | Chrome UA | Web 請求標頭模式使用的 User-Agent |
+| `requestTimeoutSeconds` | `20` | API 請求逾時秒數 |
+| `maxPushItems` | `12` | 單次 ON AIR 通知條目上限 |
+| `maxScheduleItems` | `30` | 單日排程顯示上限 |
 
-每个 `targets` 条目包含：
+每個 `targets` 條目包含：
 
-| 字段 | 必填 | 说明 |
+| 欄位 | 必填 | 說明 |
 | --- | --- | --- |
-| `platform` | 是 | Koishi 平台名，例如 `telegram`、`discord`、`onebot` |
-| `channelId` | 是 | 频道、群组或私聊 ID |
-| `selfId` | 否 | 指定机器人账号；留空时使用该平台第一个机器人 |
-| `guildId` | 否 | 某些平台发送频道消息所需的服务器 ID |
+| `platform` | 是 | Koishi 平台名稱，例如 `telegram`、`discord`、`onebot` |
+| `channelId` | 是 | 頻道、群組或私訊 ID |
+| `selfId` | 否 | 指定機器人帳號；留空時使用該平台第一個機器人 |
+| `guildId` | 否 | 某些平台傳送頻道訊息所需的伺服器 ID |
 
-示例配置：
+設定範例：
 
 ```yaml
 targets:
@@ -72,16 +72,16 @@ useMobileApi: true
 
 ## 指令
 
-| 指令 | 说明 |
+| 指令 | 說明 |
 | --- | --- |
-| `baha` | 显示插件指令帮助 |
-| `baha.announcement` | 查看当前公告，别名 `announcement` |
-| `baha.schedule [星期]` | 查看更新排程，别名 `schedule` |
-| `baha.anime <sn>` | 查询影片详情，别名 `anime` |
+| `baha` | 顯示插件指令說明 |
+| `baha.announcement` | 檢視目前公告，別名 `announcement` |
+| `baha.schedule [星期]` | 檢視更新排程，別名 `schedule` |
+| `baha.anime <sn>` | 查詢影片詳情，別名 `anime` |
 
-排程星期参数支持 `1-7`、`mon-sun`、`周一-周日`、`週一-週日` 和 `星期一-星期日`。省略参数时使用配置时区中的当天。
+排程星期參數支援 `1-7`、`mon-sun`、`周一-周日`、`週一-週日` 和 `星期一-星期日`。省略參數時使用設定時區中的當天。
 
-## 开发检查
+## 開發檢查
 
 ```powershell
 npm test
@@ -89,4 +89,3 @@ npm run typecheck
 npm run build
 npm pack --dry-run
 ```
-

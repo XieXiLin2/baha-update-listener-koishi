@@ -26,7 +26,7 @@ export const Config = ConfigSchema
 export type Config = PluginConfig
 
 export const usage = `
-配置推送目标后，插件会定时监听巴哈姆特动画疯公告和 ON AIR 更新。首次启动只记录当前状态，不推送历史内容。
+設定推送目標後，插件會定時監聽巴哈姆特動畫瘋公告和 ON AIR 更新。首次啟動只記錄目前狀態，不推送歷史內容。
 
 可用指令：
 - baha.announcement
@@ -50,57 +50,57 @@ export function apply(ctx: Context, config: PluginConfig): void {
     maxPushItems: config.maxPushItems,
   })
 
-  ctx.command('baha', '巴哈姆特动画疯查询')
+  ctx.command('baha', '巴哈姆特動畫瘋查詢')
     .action(() => [
       '可用指令：',
-      '\nbaha.announcement - 查看当前公告',
-      '\nbaha.schedule [星期] - 查看更新排程',
-      '\nbaha.anime <sn> - 查询番剧详情',
+      '\nbaha.announcement - 檢視目前公告',
+      '\nbaha.schedule [星期] - 檢視更新排程',
+      '\nbaha.anime <sn> - 查詢番劇詳情',
     ].join(''))
 
-  ctx.command('baha.announcement', '查看动画疯当前公告')
+  ctx.command('baha.announcement', '檢視動畫瘋目前公告')
     .alias('announcement')
     .action(async () => {
       try {
         const announcement = extractAnnouncement(await api.fetchIndex())
-        return announcement ? buildAnnouncementMessage(announcement) : '目前没有公告。'
+        return announcement ? buildAnnouncementMessage(announcement) : '目前沒有公告。'
       } catch (error) {
-        logger.warn('查询公告失败：%s', formatError(error))
+        logger.warn('查詢公告失敗：%s', formatError(error))
         return formatQueryError(error)
       }
     })
 
-  ctx.command('baha.schedule [day:string]', '查看动画疯每周更新排程')
+  ctx.command('baha.schedule [day:string]', '檢視動畫瘋每週更新排程')
     .alias('schedule')
     .example('baha.schedule')
-    .example('baha.schedule 周五')
+    .example('baha.schedule 週五')
     .action(async (_, day) => {
       const dayKey = day ? parseDayKey(day) : currentDayKey(config.timezone)
-      if (!dayKey) return '星期参数无效，请使用 1-7、mon-sun、周一至周日。'
+      if (!dayKey) return '星期參數無效，請使用 1-7、mon-sun、週一至週日。'
 
       try {
         const schedule = extractSchedule(await api.fetchIndex())
-        if (!Object.values(schedule).some((items) => items?.length)) return '未取得排程信息。'
+        if (!Object.values(schedule).some((items) => items?.length)) return '未取得排程資訊。'
         return buildScheduleMessage(dayKey, schedule[dayKey] ?? [], config.maxScheduleItems)
       } catch (error) {
-        logger.warn('查询排程失败：%s', formatError(error))
+        logger.warn('查詢排程失敗：%s', formatError(error))
         return formatQueryError(error)
       }
     })
 
-  ctx.command('baha.anime <sn:string>', '查询动画疯影片详情')
+  ctx.command('baha.anime <sn:string>', '查詢動畫瘋影片詳情')
     .alias('anime')
     .example('baha.anime 47927')
     .action(async (_, rawSn) => {
-      if (rawSn?.toLowerCase() === 'schedule') return '请改用 baha.schedule。'
+      if (rawSn?.toLowerCase() === 'schedule') return '請改用 baha.schedule。'
       const sn = parsePositiveInteger(rawSn)
-      if (!sn) return '用法：baha.anime <正整数 sn>'
+      if (!sn) return '用法：baha.anime <正整數 sn>'
 
       try {
         const detail = formatVideoDetail(await api.fetchVideo(sn), config.timezone)
         return buildVideoDetailMessage(detail)
       } catch (error) {
-        logger.warn('查询番剧详情失败：%s', formatError(error))
+        logger.warn('查詢番劇詳情失敗：%s', formatError(error))
         return formatQueryError(error)
       }
     })
@@ -108,7 +108,7 @@ export function apply(ctx: Context, config: PluginConfig): void {
   ctx.on('ready', async () => {
     await store.load()
     if (!config.targets.length) {
-      logger.info('未配置推送目标，仅启用查询指令。')
+      logger.info('未設定推送目標，僅啟用查詢指令。')
       return
     }
 
@@ -127,7 +127,7 @@ function parsePositiveInteger(raw?: string): number | undefined {
 function formatQueryError(error: unknown): string {
   const response = asRecord(asRecord(error)?.response)
   const status = response?.status
-  return status ? `查询失败：HTTP ${String(status)}` : '查询失败，请稍后重试。'
+  return status ? `查詢失敗：HTTP ${String(status)}` : '查詢失敗，請稍後重試。'
 }
 
 function formatError(error: unknown): string {

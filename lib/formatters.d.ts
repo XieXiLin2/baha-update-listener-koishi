@@ -1,12 +1,12 @@
 import type { AnimeItem, BahaIndexResponse, BahaVideoResponse } from './types';
 export declare const WEEKDAY_NAMES: {
-    readonly '1': "周一";
-    readonly '2': "周二";
-    readonly '3': "周三";
-    readonly '4': "周四";
-    readonly '5': "周五";
-    readonly '6': "周六";
-    readonly '7': "周日";
+    readonly '1': "週一";
+    readonly '2': "週二";
+    readonly '3': "週三";
+    readonly '4': "週四";
+    readonly '5': "週五";
+    readonly '6': "週六";
+    readonly '7': "週日";
 };
 export type DayKey = keyof typeof WEEKDAY_NAMES;
 export interface OnAirItem {

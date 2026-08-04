@@ -31,7 +31,7 @@ export class PollerService {
 
   async poll(): Promise<void> {
     if (this.polling) {
-      this.logger.debug('上一次轮询尚未完成，跳过本轮。')
+      this.logger.debug('上一次輪詢尚未完成，跳過本輪。')
       return
     }
 
@@ -51,13 +51,13 @@ export class PollerService {
           newAnimeList: animeList,
         })
         await this.store.save()
-        this.logger.info('已建立初始状态，本次不推送历史内容。')
+        this.logger.info('已建立初始狀態，本次不推送歷史內容。')
         return
       }
 
       let changed = false
       if (announcement && announcement !== state.announce) {
-        this.logger.info('检测到动画疯公告更新。')
+        this.logger.info('偵測到動畫瘋公告更新。')
         await this.broadcast(buildAnnouncementMessage(announcement))
         state.announce = announcement
         changed = true
@@ -72,10 +72,10 @@ export class PollerService {
           .slice(0, this.options.maxPushItems)
 
         if (validUpdates.length) {
-          this.logger.info('检测到 %d 项 ON AIR 更新。', validUpdates.length)
+          this.logger.info('偵測到 %d 項 ON AIR 更新。', validUpdates.length)
           await this.broadcast(buildOnAirMessage(validUpdates))
         } else {
-          this.logger.debug('ON AIR 指纹发生变化，但没有可推送的有效条目。')
+          this.logger.debug('ON AIR 指紋發生變化，但沒有可推送的有效條目。')
         }
 
         state.newAnimeDigest = digest
@@ -85,7 +85,7 @@ export class PollerService {
 
       if (changed) await this.store.save()
     } catch (error) {
-      this.logger.error('轮询巴哈动画疯失败：%s', formatError(error))
+      this.logger.error('輪詢巴哈動畫瘋失敗：%s', formatError(error))
     } finally {
       this.polling = false
     }
@@ -97,7 +97,7 @@ export class PollerService {
       const bot = this.findBot(target)
       if (!bot) {
         this.logger.warn(
-          '找不到推送机器人：platform=%s selfId=%s channelId=%s',
+          '找不到推送機器人：platform=%s selfId=%s channelId=%s',
           target.platform,
           target.selfId || '(任意)',
           target.channelId,
@@ -109,7 +109,7 @@ export class PollerService {
         await bot.sendMessage(target.channelId, content, target.guildId)
       } catch (error) {
         this.logger.error(
-          '推送失败：platform=%s selfId=%s channelId=%s error=%s',
+          '推送失敗：platform=%s selfId=%s channelId=%s error=%s',
           target.platform,
           bot.selfId,
           target.channelId,
@@ -139,4 +139,3 @@ function uniqueTargets(targets: PushTarget[]): PushTarget[] {
 function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
-

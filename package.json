@@ -35,7 +35,7 @@
   "koishi": {
     "description": {
       "en": "Monitor Bahamut Anime announcements and ON AIR updates, with schedule and anime lookup commands.",
-      "zh": "监听巴哈姆特动画疯公告与 ON AIR 更新，并提供排程和番剧详情查询。"
+      "zh": "監聽巴哈姆特動畫瘋公告與 ON AIR 更新，並提供排程和番劇詳情查詢。"
     }
   }
 }

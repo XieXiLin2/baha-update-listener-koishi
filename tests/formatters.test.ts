@@ -89,7 +89,7 @@ describe('video detail formatting', () => {
     const detail = formatVideoDetail({
       data: {
         video: {
-          title: '测试番剧 [9]',
+          title: '測試番劇 [9]',
           video_sn: 99,
           duration: 24,
           quality: '1080p',
@@ -99,16 +99,15 @@ describe('video detail formatting', () => {
           volume_index: 8,
           total_volume: 12,
           season_end: '2026-09-01',
-          tags: ['奇幻', '冒险'],
+          tags: ['奇幻', '冒險'],
         },
       },
     }, 'Asia/Taipei', new Date('2026-08-05T00:00:00.000Z'))
 
-    expect(detail.title).toBe('测试番剧')
+    expect(detail.title).toBe('測試番劇')
     expect(detail.videoSn).toBe('99')
     expect(detail.animeSn).toBe('10')
-    expect(detail.lines).toContain('集数：第 9 集 / 连载中')
-    expect(detail.lines).toContain('标签：奇幻、冒险')
+    expect(detail.lines).toContain('集數：第 9 集 / 連載中')
+    expect(detail.lines).toContain('標籤：奇幻、冒險')
   })
 })
-

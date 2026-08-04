@@ -38,7 +38,7 @@ export class StateStore {
       }
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        this.logger.warn('无法读取状态文件，将重新建立基线：%s', formatError(error))
+        this.logger.warn('無法讀取狀態檔案，將重新建立基線：%s', formatError(error))
       }
       this.state = emptyState()
     }
