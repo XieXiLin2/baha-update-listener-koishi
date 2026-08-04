@@ -145,3 +145,4 @@ dist
 
 .npm-cache/
 lib/
+dist/
