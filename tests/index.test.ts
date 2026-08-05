@@ -92,15 +92,8 @@ describe('command surface', () => {
 
     apply(context as unknown as Context, config)
 
-    expect(http.extend).toHaveBeenCalledOnce()
-    expect(http.extend).toHaveBeenCalledWith({
-      proxyAgent: 'socks5://127.0.0.1:1080',
-    })
-    expect(context.bail).toHaveBeenCalledWith(
-      'http/dispatcher',
-      new URL('socks5://127.0.0.1:1080'),
-      new URL('https://example.com/'),
-    )
+    expect(http.extend).not.toHaveBeenCalled()
+    expect(context.bail).not.toHaveBeenCalled()
 
     expect(commandNames).toEqual([
       'baha',
@@ -147,7 +140,7 @@ describe('command surface', () => {
 const config: Config = {
   targets: [],
   plainTextPlatforms: ['plain'],
-  proxyUrl: 'socks5://127.0.0.1:1080',
+  proxyUrl: '',
   enableRequestLogging: false,
   pollIntervalSeconds: 60,
   timezone: 'Asia/Taipei',

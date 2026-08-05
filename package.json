@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@koishijs/plugin-proxy-agent": "^0.3.3",
-    "cheerio": "1.0.0"
+    "cheerio": "1.0.0",
+    "undici": "^6.28.0"
   }
 }

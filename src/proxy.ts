@@ -1,5 +1,7 @@
 import type { Context, Logger } from 'koishi'
+import type { Dispatcher } from 'undici'
 
+import { ProxyHttpClient } from './proxy-http'
 import { describeProxy } from './request-diagnostics'
 
 const SUPPORTED_PROXY_PROTOCOLS = new Set([
@@ -9,11 +11,8 @@ const SUPPORTED_PROXY_PROTOCOLS = new Set([
   'socks5h:',
 ])
 
-interface ProxyCapableHttp {
-  extend(config: { proxyAgent: string }): Context['http']
-}
-
 interface ProxyDispatcher {
+  dispatch: Dispatcher['dispatch']
   close(): Promise<void>
 }
 
@@ -37,16 +36,29 @@ export function createHttpClient(
     return ctx.http
   }
 
-  const autoLoaded = assertProxySupport(ctx, normalized)
+  const { autoLoaded, dispatcher } = resolveProxySupport(ctx, normalized)
+  ctx.on('dispose', () => dispatcher.close())
   logger?.info(
-    '[proxy] mode=enabled endpoint=%s provider=%s',
+    '[proxy] mode=enabled endpoint=%s provider=%s transport=undici@%s node=%s node-undici=%s',
     describeProxy(normalized),
     autoLoaded ? 'auto-loaded' : 'existing',
+    packageUndiciVersion(),
+    process.version,
+    nodeUndiciVersion(),
   )
-  return (ctx.http as unknown as ProxyCapableHttp).extend({ proxyAgent: normalized })
+  return new ProxyHttpClient(dispatcher as Dispatcher) as unknown as Context['http']
 }
 
 export function assertProxySupport(ctx: Context, proxyUrl: string): boolean {
+  const { autoLoaded, dispatcher } = resolveProxySupport(ctx, proxyUrl)
+  void dispatcher.close()
+  return autoLoaded
+}
+
+function resolveProxySupport(
+  ctx: Context,
+  proxyUrl: string,
+): { autoLoaded: boolean, dispatcher: ProxyDispatcher } {
   let dispatcher = resolveProxyDispatcher(ctx, proxyUrl)
   let autoLoaded = false
   if (!dispatcher) {
@@ -57,8 +69,7 @@ export function assertProxySupport(ctx: Context, proxyUrl: string): boolean {
   if (!dispatcher) {
     throw new Error('無法啟用 Koishi 代理支援，已停止外部請求以避免繞過代理。')
   }
-  void dispatcher.close()
-  return autoLoaded
+  return { autoLoaded, dispatcher }
 }
 
 function resolveProxyDispatcher(
@@ -88,4 +99,16 @@ export function normalizeProxyUrl(value: string): string {
   }
   if (!url.hostname) throw new TypeError('代理伺服器網址缺少主機名稱。')
   return url.href
+}
+
+function packageUndiciVersion(): string {
+  try {
+    return String(require('undici/package.json').version)
+  } catch {
+    return 'unknown'
+  }
+}
+
+function nodeUndiciVersion(): string {
+  return (process.versions as Record<string, string | undefined>).undici ?? 'unknown'
 }

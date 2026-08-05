@@ -86,6 +86,8 @@ crPollIntervalSeconds: 300
 
 設定代理時會先確認 Koishi 的 `proxy-agent` 支援；若尚未啟用，插件會自行載入。若仍無法建立代理 Dispatcher，插件會停止啟動，不會退回直接連線。
 
+代理請求固定使用插件依賴的 Undici transport，避免較新版 Node 內建 Fetch 與 Koishi 代理 Dispatcher 的介面版本不相容。啟動日誌會同時顯示 `transport`、`node` 與 `node-undici` 版本。
+
 排查代理問題時可暫時啟用 `enableRequestLogging`。日誌不會輸出代理帳密、Authorization、Cookie、URL 查詢參數或回應內容；提供 `[proxy]` 與 `[request:*]` 行即可進行排查。
 
 ## 指令
