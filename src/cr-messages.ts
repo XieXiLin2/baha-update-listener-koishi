@@ -42,7 +42,7 @@ export function buildCrAnnouncementMessage(
   maxItems: number,
   timezone: string,
 ): h.Fragment {
-  const content: h.Fragment = [h('b', {}, 'ANNOUNCEMENT >> [CR]')]
+  const content: h.Fragment = [h('b', {}, 'Crunchyroll')]
   for (const item of items.slice(0, maxItems)) {
     const label = `[${formatCrTime(item.publishedAt, timezone)}] ${item.title}`
     content.push('\n- ')
