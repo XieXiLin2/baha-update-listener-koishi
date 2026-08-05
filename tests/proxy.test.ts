@@ -23,10 +23,28 @@ describe('proxy configuration', () => {
     const http = {
       extend: vi.fn(() => proxied),
     } as unknown as Context['http']
+    const dispatcher = { close: vi.fn().mockResolvedValue(undefined) }
+    const ctx = {
+      http,
+      bail: vi.fn(() => dispatcher),
+    } as unknown as Context
 
-    expect(createHttpClient(http, '')).toBe(http)
-    expect(createHttpClient(http, 'https://proxy.example:8443')).toBe(proxied)
+    expect(createHttpClient(ctx, '')).toBe(http)
+    expect(createHttpClient(ctx, 'https://proxy.example:8443')).toBe(proxied)
     expect((http as unknown as { extend: ReturnType<typeof vi.fn> }).extend)
       .toHaveBeenCalledWith({ proxyAgent: 'https://proxy.example:8443/' })
+    expect(dispatcher.close).toHaveBeenCalledOnce()
+  })
+
+  it('fails closed when Koishi proxy support is unavailable', () => {
+    const ctx = {
+      http: { extend: vi.fn() },
+      bail: vi.fn(),
+    } as unknown as Context
+
+    expect(() => createHttpClient(ctx, 'http://127.0.0.1:7890'))
+      .toThrow('已停止外部請求以避免繞過代理')
+    expect((ctx.http as unknown as { extend: ReturnType<typeof vi.fn> }).extend)
+      .not.toHaveBeenCalled()
   })
 })

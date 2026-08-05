@@ -71,7 +71,7 @@ export function apply(ctx: Context, config: PluginConfig): void {
   assertValidTimezone(config.timezone)
 
   const logger = new Logger(name)
-  const http = createHttpClient(ctx.http, config.proxyUrl)
+  const http = createHttpClient(ctx, config.proxyUrl)
   const api = new GamerApiClient(http, {
     useMobileApi: config.useMobileApi,
     webUserAgent: config.webUserAgent,

@@ -11,13 +11,39 @@ interface ProxyCapableHttp {
   extend(config: { proxyAgent: string }): Context['http']
 }
 
+interface ProxyDispatcher {
+  close(): Promise<void>
+}
+
+interface ProxyAwareContext {
+  bail(
+    event: 'http/dispatcher',
+    proxyUrl: URL,
+    requestUrl: URL,
+  ): ProxyDispatcher | undefined
+}
+
 export function createHttpClient(
-  http: Context['http'],
+  ctx: Context,
   proxyUrl: string,
 ): Context['http'] {
   const normalized = normalizeProxyUrl(proxyUrl)
-  if (!normalized) return http
-  return (http as unknown as ProxyCapableHttp).extend({ proxyAgent: normalized })
+  if (!normalized) return ctx.http
+
+  assertProxySupport(ctx, normalized)
+  return (ctx.http as unknown as ProxyCapableHttp).extend({ proxyAgent: normalized })
+}
+
+export function assertProxySupport(ctx: Context, proxyUrl: string): void {
+  const dispatcher = (ctx as unknown as ProxyAwareContext).bail(
+    'http/dispatcher',
+    new URL(proxyUrl),
+    new URL('https://example.com/'),
+  )
+  if (!dispatcher) {
+    throw new Error('Koishi 代理支援未啟用，已停止外部請求以避免繞過代理。請啟用 proxy-agent 插件。')
+  }
+  void dispatcher.close()
 }
 
 export function normalizeProxyUrl(value: string): string {

@@ -82,6 +82,8 @@ enableCr: true
 crPollIntervalSeconds: 300
 ```
 
+設定代理時會先確認 Koishi 的 `proxy-agent` 支援已啟用；若無法建立代理 Dispatcher，插件會停止啟動，不會退回直接連線。
+
 ## 指令
 
 | 指令 | 說明 |

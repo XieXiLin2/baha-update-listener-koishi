@@ -73,6 +73,7 @@ describe('command surface', () => {
     const context = {
       baseDir: 'D:/tmp/koishi-command-test',
       http,
+      bail: vi.fn(() => ({ close: vi.fn().mockResolvedValue(undefined) })),
       command: vi.fn((declaration: string) => {
         commandNames.push(declaration)
         const command = {
@@ -95,6 +96,11 @@ describe('command surface', () => {
     expect(http.extend).toHaveBeenCalledWith({
       proxyAgent: 'socks5://127.0.0.1:1080',
     })
+    expect(context.bail).toHaveBeenCalledWith(
+      'http/dispatcher',
+      new URL('socks5://127.0.0.1:1080'),
+      new URL('https://example.com/'),
+    )
 
     expect(commandNames).toEqual([
       'baha',
