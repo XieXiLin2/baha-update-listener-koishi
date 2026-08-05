@@ -55,6 +55,9 @@ describe('command surface', () => {
     const http = {
       get: vi.fn(async (url: string) => {
         if (url.includes('gamer.com.tw')) return bahaIndexResponse()
+        if (url.includes('/rss/anime')) return crReleaseFeedXml()
+        if (url.includes('cr-news-api-service')) return crAnnouncementFeedXml()
+        if (url.includes('/simulcastcalendar')) return '<div class="calendar"></div>'
         if (url.includes('/spotLists/')) {
           return { items: [{ id: 'anime-spot', genre: { id: 'animation' } }] }
         }
@@ -93,6 +96,10 @@ describe('command surface', () => {
       'abema',
       'abema.latest [limit:number]',
       'abema.schedule [date:string]',
+      'cr',
+      'cr.announcement',
+      'cr.latest [limit:number]',
+      'cr.schedule [date:string]',
     ])
 
     const bahaResult = await actions.get('baha')?.()
@@ -103,6 +110,9 @@ describe('command surface', () => {
 
     const latestResult = await actions.get('abema.latest [limit:number]')?.({}, 10)
     expect(JSON.stringify(latestResult)).toContain('ABEMA root schedule')
+
+    const crResult = await actions.get('cr')?.()
+    expect(JSON.stringify(crResult)).toContain('CR root schedule')
   })
 })
 
@@ -118,6 +128,9 @@ const config: Config = {
   enableAbema: true,
   abemaPollIntervalSeconds: 300,
   abemaMaxPushItems: 12,
+  enableCr: true,
+  crPollIntervalSeconds: 300,
+  crMaxPushItems: 12,
 }
 
 function bahaIndexResponse() {
@@ -157,4 +170,25 @@ function jwtExpiringInOneHour(): string {
     exp: Math.floor(Date.now() / 1000) + 3600,
   })).toString('base64url')
   return `header.${payload}.signature`
+}
+
+function crReleaseFeedXml(): string {
+  const publishedAt = new Date(Date.now() - 60_000).toUTCString()
+  return `<?xml version="1.0"?>
+    <rss xmlns:crunchyroll="http://www.crunchyroll.com/rss" version="2.0"><channel><item>
+      <title>CR root schedule - Episode 1</title>
+      <link>https://www.crunchyroll.com/watch/GCRROOT01/start</link>
+      <pubDate>${publishedAt}</pubDate>
+      <crunchyroll:premiumPubDate>${publishedAt}</crunchyroll:premiumPubDate>
+      <crunchyroll:seriesTitle>CR root schedule</crunchyroll:seriesTitle>
+      <crunchyroll:episodeNumber>1</crunchyroll:episodeNumber>
+    </item></channel></rss>`
+}
+
+function crAnnouncementFeedXml(): string {
+  return `<?xml version="1.0"?><rss version="2.0"><channel><item>
+    <title>CR announcement</title><category>Announcements</category>
+    <link>https://www.crunchyroll.com/news/announcements/test</link>
+    <pubDate>Wed, 05 Aug 2026 04:00:00 GMT</pubDate>
+  </item></channel></rss>`
 }

@@ -42,8 +42,34 @@ export interface AbemaAnimeItem {
   image: string
 }
 
+export interface CrAnimeItem {
+  key: string
+  title: string
+  seriesTitle: string
+  episodeTitle: string
+  episodeNumber: string
+  dateKey: string
+  releaseAt: number
+  url: string
+  seriesUrl: string
+  availability: 'free' | 'premium' | 'unknown'
+  premiere: boolean
+  language: string
+  image: string
+}
+
+export interface CrAnnouncementItem {
+  key: string
+  title: string
+  summary: string
+  publishedAt: number
+  url: string
+  author: string
+  image: string
+}
+
 export interface PersistedState {
-  version: 2
+  version: 3
   initialized: boolean
   announce: string
   newAnimeDigest: string
@@ -52,6 +78,12 @@ export interface PersistedState {
   abemaScheduleDigest: string
   abemaSchedule: AbemaAnimeItem[]
   abemaReleased: Record<string, string>
+  crInitialized: boolean
+  crScheduleDigest: string
+  crSchedule: CrAnimeItem[]
+  crReleased: Record<string, string>
+  crAnnouncementsInitialized: boolean
+  crAnnouncementIds: string[]
 }
 
 export function asRecord(value: unknown): UnknownRecord | undefined {
@@ -98,6 +130,34 @@ export function asAbemaAnimeItems(value: unknown): AbemaAnimeItem[] {
   })
 }
 
+export function asCrAnimeItems(value: unknown): CrAnimeItem[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    const record = asRecord(item)
+    const key = asString(record?.key)
+    if (!record || !key) return []
+
+    const availability = record.availability === 'free' || record.availability === 'premium'
+      ? record.availability
+      : 'unknown'
+    return [{
+      key,
+      title: asString(record.title),
+      seriesTitle: asString(record.seriesTitle),
+      episodeTitle: asString(record.episodeTitle),
+      episodeNumber: asString(record.episodeNumber),
+      dateKey: asString(record.dateKey),
+      releaseAt: asFiniteNumber(record.releaseAt),
+      url: asString(record.url),
+      seriesUrl: asString(record.seriesUrl),
+      availability,
+      premiere: record.premiere === true,
+      language: asString(record.language),
+      image: asString(record.image),
+    }]
+  })
+}
+
 export function asStringRecord(value: unknown): Record<string, string> {
   const record = asRecord(value)
   if (!record) return {}
@@ -106,6 +166,11 @@ export function asStringRecord(value: unknown): Record<string, string> {
       .map(([key, item]) => [key, asString(item)] as const)
       .filter((entry) => entry[0] && entry[1]),
   )
+}
+
+export function asStrings(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.map(asString).filter(Boolean)
 }
 
 function asFiniteNumber(value: unknown): number {

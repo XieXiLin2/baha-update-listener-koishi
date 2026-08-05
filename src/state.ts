@@ -7,14 +7,16 @@ import type { PersistedState } from './types'
 import {
   asAbemaAnimeItems,
   asAnimeItems,
+  asCrAnimeItems,
   asRecord,
   asString,
   asStringRecord,
+  asStrings,
 } from './types'
 
 function emptyState(): PersistedState {
   return {
-    version: 2,
+    version: 3,
     initialized: false,
     announce: '',
     newAnimeDigest: '',
@@ -23,6 +25,12 @@ function emptyState(): PersistedState {
     abemaScheduleDigest: '',
     abemaSchedule: [],
     abemaReleased: {},
+    crInitialized: false,
+    crScheduleDigest: '',
+    crSchedule: [],
+    crReleased: {},
+    crAnnouncementsInitialized: false,
+    crAnnouncementIds: [],
   }
 }
 
@@ -42,7 +50,7 @@ export class StateStore {
       const data = asRecord(JSON.parse(raw))
       if (!data) throw new TypeError('state root must be an object')
       this.state = {
-        version: 2,
+        version: 3,
         initialized: data.initialized === true || !!data.announce || !!data.newAnimeDigest,
         announce: asString(data.announce),
         newAnimeDigest: asString(data.newAnimeDigest),
@@ -51,6 +59,13 @@ export class StateStore {
         abemaScheduleDigest: asString(data.abemaScheduleDigest),
         abemaSchedule: asAbemaAnimeItems(data.abemaSchedule),
         abemaReleased: asStringRecord(data.abemaReleased),
+        crInitialized: data.crInitialized === true || !!data.crScheduleDigest,
+        crScheduleDigest: asString(data.crScheduleDigest),
+        crSchedule: asCrAnimeItems(data.crSchedule),
+        crReleased: asStringRecord(data.crReleased),
+        crAnnouncementsInitialized: data.crAnnouncementsInitialized === true
+          || asStrings(data.crAnnouncementIds).length > 0,
+        crAnnouncementIds: asStrings(data.crAnnouncementIds),
       }
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {

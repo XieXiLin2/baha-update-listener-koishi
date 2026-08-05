@@ -12,6 +12,23 @@ import { buildAbemaLatestMessage, buildAbemaScheduleMessage } from './abema-mess
 import { AbemaPollerService } from './abema-poller'
 import { GamerApiClient } from './api'
 import { Config as ConfigSchema, type Config as PluginConfig } from './config'
+import { CrApiClient } from './cr-api'
+import {
+  crWeekStartDateKey,
+  extractCrAnnouncements,
+  extractCrCalendar,
+  extractCrReleaseFeed,
+  latestCrReleases,
+  mergeCrSchedule,
+  parseCrDateArgument,
+  selectCrScheduleDate,
+} from './cr-formatters'
+import {
+  buildCrAnnouncementMessage,
+  buildCrLatestMessage,
+  buildCrScheduleMessage,
+} from './cr-messages'
+import { CrPollerService } from './cr-poller'
 import {
   assertValidTimezone,
   currentDayKey,
@@ -29,7 +46,7 @@ export const Config = ConfigSchema
 export type Config = PluginConfig
 
 export const usage = `
-設定推送目標後，插件會定時監聽巴哈姆特動畫瘋及 ABEMA 新作動畫更新。首次啟動只記錄目前狀態，不推送歷史內容。
+設定推送目標後，插件會定時監聽巴哈姆特動畫瘋、ABEMA 與 CR 動畫更新。首次啟動只記錄目前狀態，不推送歷史內容。
 
 可用指令：
 - baha
@@ -38,6 +55,10 @@ export const usage = `
 - abema
 - abema.latest [數量]
 - abema.schedule [日期]
+- cr
+- cr.announcement
+- cr.latest [數量]
+- cr.schedule [日期]
 `
 
 export function apply(ctx: Context, config: PluginConfig): void {
@@ -52,6 +73,10 @@ export function apply(ctx: Context, config: PluginConfig): void {
   const abemaApi = new AbemaApiClient(ctx.http, {
     requestTimeout: config.requestTimeoutSeconds,
   })
+  const crApi = new CrApiClient(ctx.http, {
+    requestTimeout: config.requestTimeoutSeconds,
+    userAgent: config.webUserAgent,
+  })
   const stateFile = join(ctx.baseDir, 'data', name, 'state.json')
   const store = new StateStore(stateFile, logger)
   const poller = new PollerService(ctx, logger, api, store, {
@@ -61,6 +86,11 @@ export function apply(ctx: Context, config: PluginConfig): void {
   const abemaPoller = new AbemaPollerService(ctx, logger, abemaApi, store, {
     targets: config.targets,
     maxPushItems: config.abemaMaxPushItems,
+    timezone: config.timezone,
+  })
+  const crPoller = new CrPollerService(ctx, logger, crApi, store, {
+    targets: config.targets,
+    maxPushItems: config.crMaxPushItems,
     timezone: config.timezone,
   })
 
@@ -91,6 +121,29 @@ export function apply(ctx: Context, config: PluginConfig): void {
       )
     } catch (error) {
       logger.warn('查詢 ABEMA 排程失敗：%s', formatError(error))
+      return formatQueryError(error)
+    }
+  }
+
+  const queryCrSchedule = async (date?: string) => {
+    const dateKey = parseCrDateArgument(date, config.timezone)
+    if (!dateKey) return '日期參數無效，請使用今天、明天、M/D 或 YYYY-MM-DD。'
+
+    try {
+      const weekStart = crWeekStartDateKey(dateKey)
+      const response = await crApi.fetchSchedule(weekStart)
+      const schedule = mergeCrSchedule(
+        extractCrCalendar(response.calendarHtml, weekStart, config.timezone),
+        extractCrReleaseFeed(response.releaseFeedXml, config.timezone),
+      )
+      return buildCrScheduleMessage(
+        dateKey,
+        selectCrScheduleDate(schedule, dateKey),
+        config.maxScheduleItems,
+        config.timezone,
+      )
+    } catch (error) {
+      logger.warn('查詢 CR 排程失敗：%s', formatError(error))
       return formatQueryError(error)
     }
   }
@@ -143,6 +196,47 @@ export function apply(ctx: Context, config: PluginConfig): void {
     .example('abema.schedule 8/5')
     .action((_, date) => queryAbemaSchedule(date))
 
+  ctx.command('cr', '檢視 CR 當日動畫排程')
+    .action(() => queryCrSchedule())
+
+  ctx.command('cr.announcement', '檢視 CR 最新公告')
+    .action(async () => {
+      try {
+        const announcements = extractCrAnnouncements(await crApi.fetchAnnouncementFeed())
+        return buildCrAnnouncementMessage(announcements.slice(0, 1), 1, config.timezone)
+      } catch (error) {
+        logger.warn('查詢 CR 公告失敗：%s', formatError(error))
+        return formatQueryError(error)
+      }
+    })
+
+  ctx.command('cr.latest [limit:number]', '檢視 CR 最近動畫更新')
+    .example('cr.latest')
+    .example('cr.latest 10')
+    .action(async (_, rawLimit) => {
+      const limit = normalizeLimit(rawLimit, 10, config.maxScheduleItems)
+      try {
+        const schedule = extractCrReleaseFeed(
+          await crApi.fetchReleaseFeed(),
+          config.timezone,
+        )
+        return buildCrLatestMessage(
+          latestCrReleases(schedule, limit),
+          limit,
+          config.timezone,
+        )
+      } catch (error) {
+        logger.warn('查詢 CR 最近更新失敗：%s', formatError(error))
+        return formatQueryError(error)
+      }
+    })
+
+  ctx.command('cr.schedule [date:string]', '檢視 CR 動畫排程')
+    .example('cr.schedule')
+    .example('cr.schedule 明天')
+    .example('cr.schedule 8/5')
+    .action((_, date) => queryCrSchedule(date))
+
   ctx.on('ready', async () => {
     await store.load()
     if (!config.targets.length) {
@@ -155,6 +249,10 @@ export function apply(ctx: Context, config: PluginConfig): void {
     if (config.enableAbema) {
       ctx.setInterval(() => void abemaPoller.poll(), config.abemaPollIntervalSeconds * 1000)
       initialPolls.push(abemaPoller.poll())
+    }
+    if (config.enableCr) {
+      ctx.setInterval(() => void crPoller.poll(), config.crPollIntervalSeconds * 1000)
+      initialPolls.push(crPoller.poll())
     }
     await Promise.all(initialPolls)
   })

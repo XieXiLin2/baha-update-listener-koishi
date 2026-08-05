@@ -14,6 +14,9 @@ export interface Config {
   enableAbema: boolean
   abemaPollIntervalSeconds: number
   abemaMaxPushItems: number
+  enableCr: boolean
+  crPollIntervalSeconds: number
+  crMaxPushItems: number
 }
 
 const TargetSchema: Schema<PushTarget> = Schema.object({
@@ -82,4 +85,19 @@ export const Config: Schema<Config> = Schema.object({
     .step(1)
     .default(12)
     .description('每次 ABEMA 更新通知最多包含的條目數。'),
+  enableCr: Schema.boolean()
+    .default(true)
+    .description('啟用 CR 動畫更新與公告輪詢；查詢指令仍會註冊。'),
+  crPollIntervalSeconds: Schema.number()
+    .min(60)
+    .max(86400)
+    .step(1)
+    .default(300)
+    .description('CR 動畫與公告輪詢間隔，單位為秒。'),
+  crMaxPushItems: Schema.number()
+    .min(1)
+    .max(30)
+    .step(1)
+    .default(12)
+    .description('每次 CR 更新或公告通知最多包含的條目數。'),
 })

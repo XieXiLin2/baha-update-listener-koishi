@@ -37,7 +37,7 @@ describe('StateStore', () => {
     await store.save()
 
     expect(JSON.parse(await readFile(file, 'utf8'))).toMatchObject({
-      version: 2,
+      version: 3,
       initialized: true,
       announce: 'second',
     })
@@ -65,11 +65,14 @@ describe('StateStore', () => {
 
     const store = new StateStore(file, logger)
     await expect(store.load()).resolves.toMatchObject({
-      version: 2,
+      version: 3,
       announce: '舊公告',
       newAnimeList: [{ videoSn: 123 }],
       abemaInitialized: false,
       abemaSchedule: [],
+      crInitialized: false,
+      crSchedule: [],
+      crAnnouncementsInitialized: false,
     })
   })
 
