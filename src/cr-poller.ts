@@ -13,6 +13,7 @@ import { buildCrAnnouncementMessage, buildCrUpdateMessage } from './cr-messages'
 import { formatOutboundMessage } from './outbound-message'
 import { formatSafeError } from './request-diagnostics'
 import type { StateStore } from './state'
+import { isTargetSubscribed } from './subscriptions'
 import type { PushTarget } from './types'
 
 export interface CrPollerOptions {
@@ -21,6 +22,7 @@ export interface CrPollerOptions {
   maxPushItems: number
   timezone: string
   now?: () => Date
+  isSubscribed?: (target: PushTarget) => boolean
 }
 
 export class CrPollerService {
@@ -138,7 +140,9 @@ export class CrPollerService {
   }
 
   private async broadcast(content: h.Fragment, keepUrls: boolean): Promise<void> {
-    const targets = uniqueTargets(this.options.targets)
+    const targets = uniqueTargets(this.options.targets).filter((target) => (
+      this.options.isSubscribed?.(target) ?? isTargetSubscribed(target, 'cr')
+    ))
     for (const target of targets) {
       const bot = this.findBot(target)
       if (!bot) {

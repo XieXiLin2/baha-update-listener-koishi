@@ -66,7 +66,10 @@ describe('CrPollerService', () => {
       .mockResolvedValueOnce(secondAnnouncement)
     const api = { fetchReleaseFeed, fetchAnnouncementFeed } as unknown as CrApiClient
     const poller = new CrPollerService(ctx, logger, api, store, {
-      targets: [{ platform: 'telegram', selfId: '10001', channelId: '-10001' }],
+      targets: [
+        { platform: 'telegram', selfId: '10001', channelId: '-10001', subscriptions: ['cr'] },
+        { platform: 'telegram', selfId: '10001', channelId: '-10002', subscriptions: ['baha', 'abema'] },
+      ],
       plainTextPlatforms: ['telegram'],
       maxPushItems: 12,
       timezone: 'Asia/Taipei',

@@ -63,6 +63,7 @@ npm install D:\Codes\baha-update-listener-koishi
 | `channelId` | 是 | 頻道、群組或私訊 ID |
 | `selfId` | 否 | 指定機器人帳號；留空時使用該平台第一個機器人 |
 | `guildId` | 否 | 部分平台傳送頻道訊息時需要的伺服器 ID |
+| `subscriptions` | 否 | 接收更新提醒的平台，可選 `baha`、`abema`、`cr`；省略時全部開啟 |
 
 設定範例：
 
@@ -71,6 +72,10 @@ targets:
   - platform: telegram
     selfId: "123456789"
     channelId: "-1001234567890"
+    subscriptions:
+      - baha
+      - abema
+      - cr
 plainTextPlatforms:
   - onebot
 proxyUrl: socks5://127.0.0.1:1080
@@ -98,13 +103,18 @@ crPollIntervalSeconds: 300
 | `baha.announcement` | 檢視目前公告；別名 `announcement` |
 | `baha.latest [數量]` | 檢視動畫瘋最近已更新的動畫 |
 | `baha.schedule [星期]` | 檢視動畫瘋更新排程；別名 `schedule` |
+| `baha.subscribe [on\|off]` | 查詢或切換目前群組的 Baha 更新提醒；別名 `baha.sub`，需要權限等級 3 |
 | `abema` | 檢視 ABEMA 當日新作動畫排程 |
 | `abema.latest [數量]` | 檢視目前排程中最近已更新的動畫 |
 | `abema.schedule [日期]` | 檢視指定日期的新作動畫排程 |
+| `abema.subscribe [on\|off]` | 查詢或切換目前群組的 ABEMA 更新提醒；別名 `abema.sub`，需要權限等級 3 |
 | `cr` | 檢視 CR 當日動畫排程 |
 | `cr.announcement` | 檢視 CR 官方公告分類中的最新文章 |
 | `cr.latest [數量]` | 檢視 CR 最近已更新的動畫 |
 | `cr.schedule [日期]` | 檢視指定日期的 CR 動畫排程 |
+| `cr.subscribe [on\|off]` | 查詢或切換目前群組的 CR 更新提醒；別名 `cr.sub`，需要權限等級 3 |
+
+訂閱指令只能在已加入 `targets` 的群組中使用。不帶 `on` 或 `off` 時會查詢目前狀態；指令修改會保存至插件的 `state.json`，重新啟動後仍然有效。
 
 動畫瘋星期參數支援 `1-7`、`mon-sun`、`週一-週日` 與 `星期一-星期日`。ABEMA 與 CR 日期參數支援 `今天`、`明天`、`M/D` 與 `YYYY-MM-DD`。
 

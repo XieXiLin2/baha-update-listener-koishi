@@ -37,9 +37,10 @@ describe('StateStore', () => {
     await store.save()
 
     expect(JSON.parse(await readFile(file, 'utf8'))).toMatchObject({
-      version: 3,
+      version: 4,
       initialized: true,
       announce: 'second',
+      subscriptionOverrides: {},
     })
   })
 
@@ -65,7 +66,7 @@ describe('StateStore', () => {
 
     const store = new StateStore(file, logger)
     await expect(store.load()).resolves.toMatchObject({
-      version: 3,
+      version: 4,
       announce: '舊公告',
       newAnimeList: [{ videoSn: 123 }],
       abemaInitialized: false,
@@ -73,7 +74,37 @@ describe('StateStore', () => {
       crInitialized: false,
       crSchedule: [],
       crAnnouncementsInitialized: false,
+      subscriptionOverrides: {},
     })
+  })
+
+  it('loads valid subscription overrides and ignores malformed values', async () => {
+    const file = await makeStateFile()
+    await writeFile(file, JSON.stringify({
+      version: 4,
+      subscriptionOverrides: {
+        valid: { baha: false, abema: true, cr: 'invalid' },
+        invalid: 'invalid',
+      },
+    }), 'utf8').catch(async () => {
+      const store = new StateStore(file, logger)
+      await store.save()
+      await writeFile(file, JSON.stringify({
+        version: 4,
+        subscriptionOverrides: {
+          valid: { baha: false, abema: true, cr: 'invalid' },
+          invalid: 'invalid',
+        },
+      }), 'utf8')
+    })
+
+    const store = new StateStore(file, logger)
+    await expect(store.load()).resolves.toMatchObject({
+      subscriptionOverrides: {
+        valid: { baha: false, abema: true },
+      },
+    })
+    expect(store.state.subscriptionOverrides).not.toHaveProperty('invalid')
   })
 
   it('recovers from malformed state files', async () => {

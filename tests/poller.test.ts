@@ -52,8 +52,9 @@ describe('PollerService', () => {
     const api = { fetchIndex } as unknown as GamerApiClient
     const poller = new PollerService(ctx, logger, api, store, {
       targets: [
-        { platform: 'telegram', selfId: '10001', channelId: '-10001' },
-        { platform: 'telegram', selfId: '10001', channelId: '-10001' },
+        { platform: 'telegram', selfId: '10001', channelId: '-10001', subscriptions: ['baha'] },
+        { platform: 'telegram', selfId: '10001', channelId: '-10001', subscriptions: ['baha'] },
+        { platform: 'telegram', selfId: '10001', channelId: '-10002', subscriptions: ['abema', 'cr'] },
       ],
       plainTextPlatforms: ['telegram'],
       maxPushItems: 12,

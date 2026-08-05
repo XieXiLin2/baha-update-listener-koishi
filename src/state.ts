@@ -12,11 +12,12 @@ import {
   asString,
   asStringRecord,
   asStrings,
+  asSubscriptionOverrides,
 } from './types'
 
 function emptyState(): PersistedState {
   return {
-    version: 3,
+    version: 4,
     initialized: false,
     announce: '',
     newAnimeDigest: '',
@@ -31,6 +32,7 @@ function emptyState(): PersistedState {
     crReleased: {},
     crAnnouncementsInitialized: false,
     crAnnouncementIds: [],
+    subscriptionOverrides: {},
   }
 }
 
@@ -50,7 +52,7 @@ export class StateStore {
       const data = asRecord(JSON.parse(raw))
       if (!data) throw new TypeError('state root must be an object')
       this.state = {
-        version: 3,
+        version: 4,
         initialized: data.initialized === true || !!data.announce || !!data.newAnimeDigest,
         announce: asString(data.announce),
         newAnimeDigest: asString(data.newAnimeDigest),
@@ -66,6 +68,7 @@ export class StateStore {
         crAnnouncementsInitialized: data.crAnnouncementsInitialized === true
           || asStrings(data.crAnnouncementIds).length > 0,
         crAnnouncementIds: asStrings(data.crAnnouncementIds),
+        subscriptionOverrides: asSubscriptionOverrides(data.subscriptionOverrides),
       }
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {

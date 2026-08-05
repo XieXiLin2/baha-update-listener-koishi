@@ -2,6 +2,12 @@ import { Schema } from 'koishi'
 
 import type { PushTarget } from './types'
 
+const SubscriptionSchema = Schema.union([
+  Schema.const('baha').description('Baha 動畫瘋'),
+  Schema.const('abema').description('ABEMA'),
+  Schema.const('cr').description('CR'),
+])
+
 export interface Config {
   targets: PushTarget[]
   plainTextPlatforms: string[]
@@ -33,6 +39,10 @@ const TargetSchema: Schema<PushTarget> = Schema.object({
     .description('接收更新通知的頻道、群組或私訊 ID。'),
   guildId: Schema.string()
     .description('部分平台傳送頻道訊息時需要的伺服器 ID。'),
+  subscriptions: Schema.array(SubscriptionSchema)
+    .role('checkbox')
+    .default(['baha', 'abema', 'cr'])
+    .description('此群組接收更新提醒的平台；預設全部開啟。'),
 })
 
 export const Config: Schema<Config> = Schema.object({

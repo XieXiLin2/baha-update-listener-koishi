@@ -50,7 +50,10 @@ describe('AbemaPollerService', () => {
       .mockResolvedValueOnce(scheduleResponse(['100-1_s1_p1', '100-1_s1_p2']))
     const api = { fetchAnimeSchedule } as unknown as AbemaApiClient
     const poller = new AbemaPollerService(ctx, logger, api, store, {
-      targets: [{ platform: 'telegram', selfId: '10001', channelId: '-10001' }],
+      targets: [
+        { platform: 'telegram', selfId: '10001', channelId: '-10001', subscriptions: ['abema'] },
+        { platform: 'telegram', selfId: '10001', channelId: '-10002', subscriptions: ['baha', 'cr'] },
+      ],
       plainTextPlatforms: ['telegram'],
       maxPushItems: 12,
       timezone: 'Asia/Taipei',

@@ -19,11 +19,18 @@ export interface BahaIndexResponse extends UnknownRecord {
   data?: unknown
 }
 
+export type SubscriptionSource = 'baha' | 'abema' | 'cr'
+
+export type SubscriptionSelection = Partial<Record<SubscriptionSource, boolean>>
+
+export type SubscriptionOverrides = Record<string, SubscriptionSelection>
+
 export interface PushTarget {
   platform: string
   channelId: string
   selfId?: string
   guildId?: string
+  subscriptions?: SubscriptionSource[]
 }
 
 export interface AbemaAnimeItem {
@@ -69,7 +76,7 @@ export interface CrAnnouncementItem {
 }
 
 export interface PersistedState {
-  version: 3
+  version: 4
   initialized: boolean
   announce: string
   newAnimeDigest: string
@@ -84,6 +91,7 @@ export interface PersistedState {
   crReleased: Record<string, string>
   crAnnouncementsInitialized: boolean
   crAnnouncementIds: string[]
+  subscriptionOverrides: SubscriptionOverrides
 }
 
 export function asRecord(value: unknown): UnknownRecord | undefined {
@@ -171,6 +179,21 @@ export function asStringRecord(value: unknown): Record<string, string> {
 export function asStrings(value: unknown): string[] {
   if (!Array.isArray(value)) return []
   return value.map(asString).filter(Boolean)
+}
+
+export function asSubscriptionOverrides(value: unknown): SubscriptionOverrides {
+  const record = asRecord(value)
+  if (!record) return {}
+
+  return Object.fromEntries(Object.entries(record).flatMap(([key, selection]) => {
+    const source = asRecord(selection)
+    if (!source) return []
+    const parsed: SubscriptionSelection = {}
+    for (const name of ['baha', 'abema', 'cr'] as const) {
+      if (typeof source[name] === 'boolean') parsed[name] = source[name]
+    }
+    return Object.keys(parsed).length ? [[key, parsed]] : []
+  }))
 }
 
 function asFiniteNumber(value: unknown): number {

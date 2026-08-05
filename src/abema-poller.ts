@@ -12,6 +12,7 @@ import { buildAbemaUpdateMessage } from './abema-messages'
 import { formatOutboundMessage } from './outbound-message'
 import { formatSafeError } from './request-diagnostics'
 import type { StateStore } from './state'
+import { isTargetSubscribed } from './subscriptions'
 import type { PushTarget } from './types'
 
 export interface AbemaPollerOptions {
@@ -20,6 +21,7 @@ export interface AbemaPollerOptions {
   maxPushItems: number
   timezone: string
   now?: () => Date
+  isSubscribed?: (target: PushTarget) => boolean
 }
 
 export class AbemaPollerService {
@@ -82,7 +84,9 @@ export class AbemaPollerService {
   }
 
   private async broadcast(content: h.Fragment): Promise<void> {
-    const targets = uniqueTargets(this.options.targets)
+    const targets = uniqueTargets(this.options.targets).filter((target) => (
+      this.options.isSubscribed?.(target) ?? isTargetSubscribed(target, 'abema')
+    ))
     for (const target of targets) {
       const bot = this.findBot(target)
       if (!bot) {

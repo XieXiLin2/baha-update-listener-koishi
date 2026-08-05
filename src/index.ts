@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 
 import { Context, Logger } from 'koishi'
-import type { h } from 'koishi'
+import type { h, Session } from 'koishi'
 
 import { AbemaApiClient } from './abema-api'
 import {
@@ -45,7 +45,9 @@ import { PollerService } from './poller'
 import { createHttpClient } from './proxy'
 import { formatSafeError, RequestDiagnostics } from './request-diagnostics'
 import { StateStore } from './state'
+import { parseSubscriptionSwitch, SubscriptionService } from './subscriptions'
 import { asRecord } from './types'
+import type { SubscriptionSource } from './types'
 
 export const name = 'baha-update-listener'
 export const Config = ConfigSchema
@@ -59,13 +61,16 @@ export const usage = `
 - baha.announcement
 - baha.latest [數量]
 - baha.schedule [1-7/星期]
+- baha.subscribe [on/off]
 - abema
 - abema.latest [數量]
 - abema.schedule [日期]
+- abema.subscribe [on/off]
 - cr
 - cr.announcement
 - cr.latest [數量]
 - cr.schedule [日期]
+- cr.subscribe [on/off]
 `
 
 export function apply(ctx: Context, config: PluginConfig): void {
@@ -100,22 +105,26 @@ export function apply(ctx: Context, config: PluginConfig): void {
   })
   const stateFile = join(ctx.baseDir, 'data', name, 'state.json')
   const store = new StateStore(stateFile, logger)
+  const subscriptions = new SubscriptionService(config.targets, store)
   const poller = new PollerService(ctx, logger, api, store, {
     targets: config.targets,
     plainTextPlatforms: config.plainTextPlatforms,
     maxPushItems: config.maxPushItems,
+    isSubscribed: (target) => subscriptions.isSubscribed(target, 'baha'),
   })
   const abemaPoller = new AbemaPollerService(ctx, logger, abemaApi, store, {
     targets: config.targets,
     plainTextPlatforms: config.plainTextPlatforms,
     maxPushItems: config.abemaMaxPushItems,
     timezone: config.timezone,
+    isSubscribed: (target) => subscriptions.isSubscribed(target, 'abema'),
   })
   const crPoller = new CrPollerService(ctx, logger, crApi, store, {
     targets: config.targets,
     plainTextPlatforms: config.plainTextPlatforms,
     maxPushItems: config.crMaxPushItems,
     timezone: config.timezone,
+    isSubscribed: (target) => subscriptions.isSubscribed(target, 'cr'),
   })
 
   const queryBahaSchedule = async (day?: string) => {
@@ -183,6 +192,27 @@ export function apply(ctx: Context, config: PluginConfig): void {
     { keepUrls },
   )
 
+  const manageSubscription = async (
+    session: Session | undefined,
+    source: SubscriptionSource,
+    label: string,
+    rawState?: string,
+  ): Promise<string> => {
+    if (!session?.platform || !session.channelId) return '無法識別目前群組。'
+    if (session.isDirect) return '此指令只能在群組中使用。'
+
+    const enabled = parseSubscriptionSwitch(rawState)
+    if (enabled === null) return '開關參數無效，請使用 on 或 off。'
+    const result = enabled === undefined
+      ? subscriptions.status(session, source)
+      : await subscriptions.set(session, source, enabled)
+    if (!result.found) return '目前群組不在推送目標中。'
+    if (enabled === undefined) {
+      return `${label} 更新提醒：${result.enabled ? '已開啟' : '已關閉'}。`
+    }
+    return `已${result.enabled ? '開啟' : '關閉'}此群組的 ${label} 更新提醒。`
+  }
+
   ctx.command('baha', '檢視動畫瘋當日更新排程')
     .action(async ({ session }) => formatReply(await queryBahaSchedule(), session?.platform ?? '', false))
 
@@ -226,6 +256,12 @@ export function apply(ctx: Context, config: PluginConfig): void {
       false,
     ))
 
+  ctx.command('baha.subscribe [state:string]', '管理此群組的 Baha 更新提醒', {
+    permissions: ['authority:3'],
+  })
+    .alias('baha.sub')
+    .action(({ session }, state) => manageSubscription(session, 'baha', 'Baha', state))
+
   ctx.command('abema', '檢視 ABEMA 當日新作動畫排程')
     .action(async ({ session }) => formatReply(await queryAbemaSchedule(), session?.platform ?? '', false))
 
@@ -256,6 +292,12 @@ export function apply(ctx: Context, config: PluginConfig): void {
       session?.platform ?? '',
       false,
     ))
+
+  ctx.command('abema.subscribe [state:string]', '管理此群組的 ABEMA 更新提醒', {
+    permissions: ['authority:3'],
+  })
+    .alias('abema.sub')
+    .action(({ session }, state) => manageSubscription(session, 'abema', 'ABEMA', state))
 
   ctx.command('cr', '檢視 CR 當日動畫排程')
     .action(async ({ session }) => formatReply(await queryCrSchedule(), session?.platform ?? '', false))
@@ -305,6 +347,12 @@ export function apply(ctx: Context, config: PluginConfig): void {
       session?.platform ?? '',
       false,
     ))
+
+  ctx.command('cr.subscribe [state:string]', '管理此群組的 CR 更新提醒', {
+    permissions: ['authority:3'],
+  })
+    .alias('cr.sub')
+    .action(({ session }, state) => manageSubscription(session, 'cr', 'CR', state))
 
   ctx.on('ready', async () => {
     await store.load()

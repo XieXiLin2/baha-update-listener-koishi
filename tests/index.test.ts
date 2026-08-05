@@ -28,9 +28,11 @@ vi.mock('koishi', () => {
     Schema: {
       array: schema,
       boolean: schema,
+      const: schema,
       number: schema,
       object: schema,
       string: schema,
+      union: schema,
     },
     h: (type: string, attrs: Record<string, unknown>, children: unknown) => ({
       type,
@@ -46,6 +48,8 @@ describe('command surface', () => {
   it('maps both root commands to today schedules and registers no detail commands', async () => {
     const actions = new Map<string, CommandAction>()
     const commandNames: string[] = []
+    const commandConfigs = new Map<string, Record<string, unknown> | undefined>()
+    const commandAliases = new Map<string, string[]>()
     const todayLabel = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Asia/Tokyo',
       month: 'numeric',
@@ -74,10 +78,19 @@ describe('command surface', () => {
       baseDir: 'D:/tmp/koishi-command-test',
       http,
       bail: vi.fn(() => ({ close: vi.fn().mockResolvedValue(undefined) })),
-      command: vi.fn((declaration: string) => {
+      command: vi.fn((
+        declaration: string,
+        _description?: string,
+        commandConfig?: Record<string, unknown>,
+      ) => {
         commandNames.push(declaration)
+        commandConfigs.set(declaration, commandConfig)
+        commandAliases.set(declaration, [])
         const command = {
-          alias: () => command,
+          alias: (alias: string) => {
+            commandAliases.get(declaration)?.push(alias)
+            return command
+          },
           example: () => command,
           action: (handler: CommandAction) => {
             actions.set(declaration, handler)
@@ -100,14 +113,23 @@ describe('command surface', () => {
       'baha.announcement',
       'baha.latest [limit:number]',
       'baha.schedule [day:string]',
+      'baha.subscribe [state:string]',
       'abema',
       'abema.latest [limit:number]',
       'abema.schedule [date:string]',
+      'abema.subscribe [state:string]',
       'cr',
       'cr.announcement',
       'cr.latest [limit:number]',
       'cr.schedule [date:string]',
+      'cr.subscribe [state:string]',
     ])
+
+    for (const source of ['baha', 'abema', 'cr']) {
+      const command = `${source}.subscribe [state:string]`
+      expect(commandConfigs.get(command)).toEqual({ permissions: ['authority:3'] })
+      expect(commandAliases.get(command)).toEqual([`${source}.sub`])
+    }
 
     const plainArgv = { session: { platform: 'plain' } }
     const bahaResult = await actions.get('baha')?.(plainArgv)
