@@ -5,6 +5,7 @@ import type { PushTarget } from './types'
 export interface Config {
   targets: PushTarget[]
   plainTextPlatforms: string[]
+  proxyUrl: string
   pollIntervalSeconds: number
   timezone: string
   useMobileApi: boolean
@@ -41,6 +42,10 @@ export const Config: Schema<Config> = Schema.object({
   plainTextPlatforms: Schema.array(Schema.string())
     .default([])
     .description('停用富文字訊息的平台名稱。ON AIR 與排程不附 URL，最近更新與公告保留純文字 URL。'),
+  proxyUrl: Schema.string()
+    .role('secret')
+    .default('')
+    .description('外部請求使用的 HTTP、HTTPS、SOCKS5 或 SOCKS5H 代理網址；留空時直接連線。'),
   pollIntervalSeconds: Schema.number()
     .min(15)
     .max(86400)

@@ -39,6 +39,7 @@ npm install D:\Codes\baha-update-listener-koishi
 | --- | --- | --- |
 | `targets` | `[]` | 主動推送目標；留空時只啟用查詢指令 |
 | `plainTextPlatforms` | `[]` | 指定只使用純文字訊息的平台；ON AIR 與排程不附 URL |
+| `proxyUrl` | `''` | Baha、ABEMA、CR 外部請求共用的 HTTP/HTTPS/SOCKS5/SOCKS5H 代理網址 |
 | `pollIntervalSeconds` | `60` | 動畫瘋輪詢間隔，最短 15 秒 |
 | `timezone` | `Asia/Taipei` | 訊息時間與動畫瘋排程使用的 IANA 時區 |
 | `useMobileApi` | `true` | 是否使用動畫瘋 Android 請求標頭 |
@@ -71,6 +72,7 @@ targets:
     channelId: "-1001234567890"
 plainTextPlatforms:
   - onebot
+proxyUrl: socks5://127.0.0.1:1080
 pollIntervalSeconds: 60
 timezone: Asia/Taipei
 useMobileApi: true

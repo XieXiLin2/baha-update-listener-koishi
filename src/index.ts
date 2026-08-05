@@ -42,6 +42,7 @@ import {
 import { buildAnnouncementMessage, buildBahaLatestMessage, buildScheduleMessage } from './messages'
 import { formatOutboundMessage } from './outbound-message'
 import { PollerService } from './poller'
+import { createHttpClient } from './proxy'
 import { StateStore } from './state'
 import { asRecord } from './types'
 
@@ -70,15 +71,16 @@ export function apply(ctx: Context, config: PluginConfig): void {
   assertValidTimezone(config.timezone)
 
   const logger = new Logger(name)
-  const api = new GamerApiClient(ctx.http, {
+  const http = createHttpClient(ctx.http, config.proxyUrl)
+  const api = new GamerApiClient(http, {
     useMobileApi: config.useMobileApi,
     webUserAgent: config.webUserAgent,
     requestTimeout: config.requestTimeoutSeconds,
   })
-  const abemaApi = new AbemaApiClient(ctx.http, {
+  const abemaApi = new AbemaApiClient(http, {
     requestTimeout: config.requestTimeoutSeconds,
   })
-  const crApi = new CrApiClient(ctx.http, {
+  const crApi = new CrApiClient(http, {
     requestTimeout: config.requestTimeoutSeconds,
     userAgent: config.webUserAgent,
   })

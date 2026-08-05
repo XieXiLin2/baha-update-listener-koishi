@@ -67,7 +67,9 @@ describe('command surface', () => {
       post: vi.fn(async () => ({
         access_token: jwtExpiringInOneHour(),
       })),
+      extend: vi.fn(),
     }
+    http.extend.mockReturnValue(http)
     const context = {
       baseDir: 'D:/tmp/koishi-command-test',
       http,
@@ -88,6 +90,11 @@ describe('command surface', () => {
     }
 
     apply(context as unknown as Context, config)
+
+    expect(http.extend).toHaveBeenCalledOnce()
+    expect(http.extend).toHaveBeenCalledWith({
+      proxyAgent: 'socks5://127.0.0.1:1080',
+    })
 
     expect(commandNames).toEqual([
       'baha',
@@ -134,6 +141,7 @@ describe('command surface', () => {
 const config: Config = {
   targets: [],
   plainTextPlatforms: ['plain'],
+  proxyUrl: 'socks5://127.0.0.1:1080',
   pollIntervalSeconds: 60,
   timezone: 'Asia/Taipei',
   useMobileApi: true,
