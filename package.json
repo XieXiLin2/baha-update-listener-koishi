@@ -39,5 +39,8 @@
       "en": "Monitor Bahamut Anime, ABEMA, and Crunchyroll updates with schedule, recent update, and announcement commands.",
       "zh": "監聽巴哈姆特動畫瘋、ABEMA 與 CR 動畫更新，並提供排程、最近更新與公告查詢。"
     }
+  },
+  "dependencies": {
+    "cheerio": "1.0.0"
   }
 }
