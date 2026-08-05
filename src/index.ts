@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 
 import { Context, Logger } from 'koishi'
+import type { h } from 'koishi'
 
 import { AbemaApiClient } from './abema-api'
 import {
@@ -39,6 +40,7 @@ import {
   parseDayKey,
 } from './formatters'
 import { buildAnnouncementMessage, buildBahaLatestMessage, buildScheduleMessage } from './messages'
+import { formatOutboundMessage } from './outbound-message'
 import { PollerService } from './poller'
 import { StateStore } from './state'
 import { asRecord } from './types'
@@ -84,15 +86,18 @@ export function apply(ctx: Context, config: PluginConfig): void {
   const store = new StateStore(stateFile, logger)
   const poller = new PollerService(ctx, logger, api, store, {
     targets: config.targets,
+    plainTextPlatforms: config.plainTextPlatforms,
     maxPushItems: config.maxPushItems,
   })
   const abemaPoller = new AbemaPollerService(ctx, logger, abemaApi, store, {
     targets: config.targets,
+    plainTextPlatforms: config.plainTextPlatforms,
     maxPushItems: config.abemaMaxPushItems,
     timezone: config.timezone,
   })
   const crPoller = new CrPollerService(ctx, logger, crApi, store, {
     targets: config.targets,
+    plainTextPlatforms: config.plainTextPlatforms,
     maxPushItems: config.crMaxPushItems,
     timezone: config.timezone,
   })
@@ -151,15 +156,27 @@ export function apply(ctx: Context, config: PluginConfig): void {
     }
   }
 
+  const formatReply = (
+    content: h.Fragment,
+    platform: string,
+    keepUrls: boolean,
+  ): h.Fragment => formatOutboundMessage(
+    content,
+    platform,
+    config.plainTextPlatforms,
+    { keepUrls },
+  )
+
   ctx.command('baha', '檢視動畫瘋當日更新排程')
-    .action(() => queryBahaSchedule())
+    .action(async ({ session }) => formatReply(await queryBahaSchedule(), session?.platform ?? '', false))
 
   ctx.command('baha.announcement', '檢視動畫瘋目前公告')
     .alias('announcement')
-    .action(async () => {
+    .action(async ({ session }) => {
       try {
         const announcement = extractAnnouncement(await api.fetchIndex())
-        return announcement ? buildAnnouncementMessage(announcement) : '目前沒有公告。'
+        const message = announcement ? buildAnnouncementMessage(announcement) : '目前沒有公告。'
+        return formatReply(message, session?.platform ?? '', true)
       } catch (error) {
         logger.warn('查詢公告失敗：%s', formatError(error))
         return formatQueryError(error)
@@ -169,14 +186,14 @@ export function apply(ctx: Context, config: PluginConfig): void {
   ctx.command('baha.latest [limit:number]', '檢視動畫瘋最近更新')
     .example('baha.latest')
     .example('baha.latest 10')
-    .action(async (_, rawLimit) => {
+    .action(async ({ session }, rawLimit) => {
       const limit = normalizeLimit(rawLimit, 10, config.maxScheduleItems)
       try {
         const updates = latestBahaReleases(
           extractNewAnimeList(await api.fetchIndex()),
           limit,
         )
-        return buildBahaLatestMessage(updates)
+        return formatReply(buildBahaLatestMessage(updates), session?.platform ?? '', true)
       } catch (error) {
         logger.warn('查詢動畫瘋最近更新失敗：%s', formatError(error))
         return formatQueryError(error)
@@ -187,23 +204,27 @@ export function apply(ctx: Context, config: PluginConfig): void {
     .alias('schedule')
     .example('baha.schedule')
     .example('baha.schedule 週五')
-    .action((_, day) => queryBahaSchedule(day))
+    .action(async ({ session }, day) => formatReply(
+      await queryBahaSchedule(day),
+      session?.platform ?? '',
+      false,
+    ))
 
   ctx.command('abema', '檢視 ABEMA 當日新作動畫排程')
-    .action(() => queryAbemaSchedule())
+    .action(async ({ session }) => formatReply(await queryAbemaSchedule(), session?.platform ?? '', false))
 
   ctx.command('abema.latest [limit:number]', '檢視 ABEMA 最近動畫更新')
     .example('abema.latest')
     .example('abema.latest 10')
-    .action(async (_, rawLimit) => {
+    .action(async ({ session }, rawLimit) => {
       const limit = normalizeLimit(rawLimit, 10, config.maxScheduleItems)
       try {
         const schedule = extractAbemaAnimeSchedule(await abemaApi.fetchAnimeSchedule())
-        return buildAbemaLatestMessage(
+        return formatReply(buildAbemaLatestMessage(
           latestAbemaReleases(schedule, limit),
           limit,
           config.timezone,
-        )
+        ), session?.platform ?? '', true)
       } catch (error) {
         logger.warn('查詢 ABEMA 最近更新失敗：%s', formatError(error))
         return formatQueryError(error)
@@ -214,16 +235,24 @@ export function apply(ctx: Context, config: PluginConfig): void {
     .example('abema.schedule')
     .example('abema.schedule 明天')
     .example('abema.schedule 8/5')
-    .action((_, date) => queryAbemaSchedule(date))
+    .action(async ({ session }, date) => formatReply(
+      await queryAbemaSchedule(date),
+      session?.platform ?? '',
+      false,
+    ))
 
   ctx.command('cr', '檢視 CR 當日動畫排程')
-    .action(() => queryCrSchedule())
+    .action(async ({ session }) => formatReply(await queryCrSchedule(), session?.platform ?? '', false))
 
   ctx.command('cr.announcement', '檢視 CR 最新公告')
-    .action(async () => {
+    .action(async ({ session }) => {
       try {
         const announcements = extractCrAnnouncements(await crApi.fetchAnnouncementFeed())
-        return buildCrAnnouncementMessage(announcements.slice(0, 1), 1, config.timezone)
+        return formatReply(
+          buildCrAnnouncementMessage(announcements.slice(0, 1), 1, config.timezone),
+          session?.platform ?? '',
+          true,
+        )
       } catch (error) {
         logger.warn('查詢 CR 公告失敗：%s', formatError(error))
         return formatQueryError(error)
@@ -233,18 +262,18 @@ export function apply(ctx: Context, config: PluginConfig): void {
   ctx.command('cr.latest [limit:number]', '檢視 CR 最近動畫更新')
     .example('cr.latest')
     .example('cr.latest 10')
-    .action(async (_, rawLimit) => {
+    .action(async ({ session }, rawLimit) => {
       const limit = normalizeLimit(rawLimit, 10, config.maxScheduleItems)
       try {
         const schedule = extractCrReleaseFeed(
           await crApi.fetchReleaseFeed(),
           config.timezone,
         )
-        return buildCrLatestMessage(
+        return formatReply(buildCrLatestMessage(
           latestCrReleases(schedule, limit),
           limit,
           config.timezone,
-        )
+        ), session?.platform ?? '', true)
       } catch (error) {
         logger.warn('查詢 CR 最近更新失敗：%s', formatError(error))
         return formatQueryError(error)
@@ -255,7 +284,11 @@ export function apply(ctx: Context, config: PluginConfig): void {
     .example('cr.schedule')
     .example('cr.schedule 明天')
     .example('cr.schedule 8/5')
-    .action((_, date) => queryCrSchedule(date))
+    .action(async ({ session }, date) => formatReply(
+      await queryCrSchedule(date),
+      session?.platform ?? '',
+      false,
+    ))
 
   ctx.on('ready', async () => {
     await store.load()

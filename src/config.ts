@@ -4,6 +4,7 @@ import type { PushTarget } from './types'
 
 export interface Config {
   targets: PushTarget[]
+  plainTextPlatforms: string[]
   pollIntervalSeconds: number
   timezone: string
   useMobileApi: boolean
@@ -37,6 +38,9 @@ export const Config: Schema<Config> = Schema.object({
     .role('table')
     .default([])
     .description('主動推送目標。留空時只註冊查詢指令，不啟動輪詢。'),
+  plainTextPlatforms: Schema.array(Schema.string())
+    .default([])
+    .description('停用富文字訊息的平台名稱。ON AIR 與排程不附 URL，最近更新與公告保留純文字 URL。'),
   pollIntervalSeconds: Schema.number()
     .min(15)
     .max(86400)

@@ -10,11 +10,13 @@ import {
   sortOnAirItems,
 } from './formatters'
 import { buildAnnouncementMessage, buildOnAirMessage } from './messages'
+import { formatOutboundMessage } from './outbound-message'
 import type { StateStore } from './state'
 import type { PushTarget } from './types'
 
 export interface PollerOptions {
   targets: PushTarget[]
+  plainTextPlatforms: string[]
   maxPushItems: number
 }
 
@@ -58,7 +60,7 @@ export class PollerService {
       let changed = false
       if (announcement && announcement !== state.announce) {
         this.logger.info('偵測到動畫瘋公告更新。')
-        await this.broadcast(buildAnnouncementMessage(announcement))
+        await this.broadcast(buildAnnouncementMessage(announcement), true)
         state.announce = announcement
         changed = true
       }
@@ -73,7 +75,7 @@ export class PollerService {
 
         if (validUpdates.length) {
           this.logger.info('偵測到 %d 項 ON AIR 更新。', validUpdates.length)
-          await this.broadcast(buildOnAirMessage(validUpdates))
+          await this.broadcast(buildOnAirMessage(validUpdates), false)
         } else {
           this.logger.debug('ON AIR 指紋發生變化，但沒有可推送的有效條目。')
         }
@@ -91,7 +93,7 @@ export class PollerService {
     }
   }
 
-  private async broadcast(content: h.Fragment): Promise<void> {
+  private async broadcast(content: h.Fragment, keepUrls: boolean): Promise<void> {
     const targets = uniqueTargets(this.options.targets)
     for (const target of targets) {
       const bot = this.findBot(target)
@@ -106,7 +108,11 @@ export class PollerService {
       }
 
       try {
-        await bot.sendMessage(target.channelId, content, target.guildId)
+        await bot.sendMessage(
+          target.channelId,
+          formatOutboundMessage(content, target.platform, this.options.plainTextPlatforms, { keepUrls }),
+          target.guildId,
+        )
       } catch (error) {
         this.logger.error(
           '推送失敗：platform=%s selfId=%s channelId=%s error=%s',

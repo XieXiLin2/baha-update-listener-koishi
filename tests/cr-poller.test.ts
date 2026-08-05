@@ -67,6 +67,7 @@ describe('CrPollerService', () => {
     const api = { fetchReleaseFeed, fetchAnnouncementFeed } as unknown as CrApiClient
     const poller = new CrPollerService(ctx, logger, api, store, {
       targets: [{ platform: 'telegram', selfId: '10001', channelId: '-10001' }],
+      plainTextPlatforms: ['telegram'],
       maxPushItems: 12,
       timezone: 'Asia/Taipei',
       now: () => new Date('2026-08-05T04:30:00.000Z'),
@@ -79,6 +80,8 @@ describe('CrPollerService', () => {
 
     await poller.poll()
     expect(sendMessage).toHaveBeenCalledTimes(2)
+    expect(sendMessage.mock.calls[0][1]).not.toContain('crunchyroll.com')
+    expect(sendMessage.mock.calls[1][1]).toContain('https://www.crunchyroll.com/news/announcements/second')
 
     await poller.poll()
     expect(sendMessage).toHaveBeenCalledTimes(2)

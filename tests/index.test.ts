@@ -103,26 +103,37 @@ describe('command surface', () => {
       'cr.schedule [date:string]',
     ])
 
-    const bahaResult = await actions.get('baha')?.()
-    expect(JSON.stringify(bahaResult)).toContain('Baha root schedule')
+    const plainArgv = { session: { platform: 'plain' } }
+    const bahaResult = await actions.get('baha')?.(plainArgv)
+    expect(bahaResult).toContain('Baha root schedule')
+    expect(bahaResult).not.toContain('ani.gamer.com.tw')
 
-    const bahaLatestResult = await actions.get('baha.latest [limit:number]')?.({}, 10)
-    expect(JSON.stringify(bahaLatestResult)).toContain('Baha latest update')
-    expect(JSON.stringify(bahaLatestResult)).toContain('[08/05 12:00]')
+    const bahaLatestResult = await actions.get('baha.latest [limit:number]')?.(plainArgv, 10)
+    expect(bahaLatestResult).toContain('Baha latest update')
+    expect(bahaLatestResult).toContain('[08/05 12:00]')
+    expect(bahaLatestResult).toContain('https://ani.gamer.com.tw/animeVideo.php?sn=12345')
 
-    const abemaResult = await actions.get('abema')?.()
-    expect(JSON.stringify(abemaResult)).toContain('ABEMA root schedule')
+    const abemaResult = await actions.get('abema')?.(plainArgv)
+    expect(abemaResult).toContain('ABEMA root schedule')
+    expect(abemaResult).not.toContain('abema.tv')
 
-    const latestResult = await actions.get('abema.latest [limit:number]')?.({}, 10)
-    expect(JSON.stringify(latestResult)).toContain('ABEMA root schedule')
+    const latestResult = await actions.get('abema.latest [limit:number]')?.(plainArgv, 10)
+    expect(latestResult).toContain('ABEMA root schedule')
+    expect(latestResult).toContain('https://abema.tv/')
 
-    const crResult = await actions.get('cr')?.()
-    expect(JSON.stringify(crResult)).toContain('CR root schedule')
+    const crResult = await actions.get('cr')?.(plainArgv)
+    expect(crResult).toContain('CR root schedule')
+    expect(crResult).not.toContain('crunchyroll.com')
+
+    const crLatestResult = await actions.get('cr.latest [limit:number]')?.(plainArgv, 10)
+    expect(crLatestResult).toContain('CR root schedule')
+    expect(crLatestResult).toContain('https://www.crunchyroll.com/watch/GCRROOT01/start')
   })
 })
 
 const config: Config = {
   targets: [],
+  plainTextPlatforms: ['plain'],
   pollIntervalSeconds: 60,
   timezone: 'Asia/Taipei',
   useMobileApi: true,
@@ -144,7 +155,7 @@ function bahaIndexResponse() {
       newAnimeSchedule: Object.fromEntries(
         Array.from({ length: 7 }, (_, index) => [
           String(index + 1),
-          [{ title: 'Baha root schedule', scheduleTime: '12:00' }],
+          [{ title: 'Baha root schedule', scheduleTime: '12:00', videoSn: 99999 }],
         ]),
       ),
       newAnime: {

@@ -38,6 +38,7 @@ npm install D:\Codes\baha-update-listener-koishi
 | 設定項 | 預設值 | 說明 |
 | --- | --- | --- |
 | `targets` | `[]` | 主動推送目標；留空時只啟用查詢指令 |
+| `plainTextPlatforms` | `[]` | 指定只使用純文字訊息的平台；ON AIR 與排程不附 URL |
 | `pollIntervalSeconds` | `60` | 動畫瘋輪詢間隔，最短 15 秒 |
 | `timezone` | `Asia/Taipei` | 訊息時間與動畫瘋排程使用的 IANA 時區 |
 | `useMobileApi` | `true` | 是否使用動畫瘋 Android 請求標頭 |
@@ -68,6 +69,8 @@ targets:
   - platform: telegram
     selfId: "123456789"
     channelId: "-1001234567890"
+plainTextPlatforms:
+  - onebot
 pollIntervalSeconds: 60
 timezone: Asia/Taipei
 useMobileApi: true

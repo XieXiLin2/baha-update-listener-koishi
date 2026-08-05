@@ -55,6 +55,7 @@ describe('PollerService', () => {
         { platform: 'telegram', selfId: '10001', channelId: '-10001' },
         { platform: 'telegram', selfId: '10001', channelId: '-10001' },
       ],
+      plainTextPlatforms: ['telegram'],
       maxPushItems: 12,
     })
 
@@ -67,8 +68,9 @@ describe('PollerService', () => {
 
     await poller.poll()
     expect(sendMessage).toHaveBeenCalledTimes(2)
-    expect(sendMessage).toHaveBeenNthCalledWith(1, '-10001', expect.any(Array), undefined)
-    expect(sendMessage).toHaveBeenNthCalledWith(2, '-10001', expect.any(Array), undefined)
+    expect(sendMessage).toHaveBeenNthCalledWith(1, '-10001', expect.any(String), undefined)
+    expect(sendMessage).toHaveBeenNthCalledWith(2, '-10001', expect.any(String), undefined)
+    expect(sendMessage.mock.calls[1][1]).not.toContain('ani.gamer.com.tw')
     expect(store.state).toMatchObject({
       announce: '新公告',
       newAnimeList: [expect.objectContaining({ volume: '第 2 集' })],

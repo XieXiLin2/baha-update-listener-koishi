@@ -10,11 +10,13 @@ import {
   markCrReleases,
 } from './cr-formatters'
 import { buildCrAnnouncementMessage, buildCrUpdateMessage } from './cr-messages'
+import { formatOutboundMessage } from './outbound-message'
 import type { StateStore } from './state'
 import type { PushTarget } from './types'
 
 export interface CrPollerOptions {
   targets: PushTarget[]
+  plainTextPlatforms: string[]
   maxPushItems: number
   timezone: string
   now?: () => Date
@@ -96,7 +98,7 @@ export class CrPollerService {
         releases,
         this.options.maxPushItems,
         this.options.timezone,
-      ))
+      ), false)
       markCrReleases(state.crReleased, releases)
     }
 
@@ -129,12 +131,12 @@ export class CrPollerService {
       updates,
       this.options.maxPushItems,
       this.options.timezone,
-    ))
+    ), true)
     state.crAnnouncementIds = [...new Set([...currentIds, ...state.crAnnouncementIds])].slice(0, 500)
     return true
   }
 
-  private async broadcast(content: h.Fragment): Promise<void> {
+  private async broadcast(content: h.Fragment, keepUrls: boolean): Promise<void> {
     const targets = uniqueTargets(this.options.targets)
     for (const target of targets) {
       const bot = this.findBot(target)
@@ -149,7 +151,11 @@ export class CrPollerService {
       }
 
       try {
-        await bot.sendMessage(target.channelId, content, target.guildId)
+        await bot.sendMessage(
+          target.channelId,
+          formatOutboundMessage(content, target.platform, this.options.plainTextPlatforms, { keepUrls }),
+          target.guildId,
+        )
       } catch (error) {
         this.logger.error(
           '推送失敗：platform=%s selfId=%s channelId=%s error=%s',

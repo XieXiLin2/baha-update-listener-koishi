@@ -51,6 +51,7 @@ describe('AbemaPollerService', () => {
     const api = { fetchAnimeSchedule } as unknown as AbemaApiClient
     const poller = new AbemaPollerService(ctx, logger, api, store, {
       targets: [{ platform: 'telegram', selfId: '10001', channelId: '-10001' }],
+      plainTextPlatforms: ['telegram'],
       maxPushItems: 12,
       timezone: 'Asia/Taipei',
       now: () => new Date('2026-08-05T04:00:00.000Z'),
@@ -62,7 +63,8 @@ describe('AbemaPollerService', () => {
 
     await poller.poll()
     expect(sendMessage).toHaveBeenCalledOnce()
-    expect(sendMessage).toHaveBeenCalledWith('-10001', expect.any(Array), undefined)
+    expect(sendMessage).toHaveBeenCalledWith('-10001', expect.any(String), undefined)
+    expect(sendMessage.mock.calls[0][1]).not.toContain('abema.tv')
 
     await poller.poll()
     expect(sendMessage).toHaveBeenCalledOnce()

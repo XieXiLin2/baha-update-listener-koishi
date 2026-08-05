@@ -9,11 +9,13 @@ import {
   markAbemaReleases,
 } from './abema-formatters'
 import { buildAbemaUpdateMessage } from './abema-messages'
+import { formatOutboundMessage } from './outbound-message'
 import type { StateStore } from './state'
 import type { PushTarget } from './types'
 
 export interface AbemaPollerOptions {
   targets: PushTarget[]
+  plainTextPlatforms: string[]
   maxPushItems: number
   timezone: string
   now?: () => Date
@@ -93,7 +95,11 @@ export class AbemaPollerService {
       }
 
       try {
-        await bot.sendMessage(target.channelId, content, target.guildId)
+        await bot.sendMessage(
+          target.channelId,
+          formatOutboundMessage(content, target.platform, this.options.plainTextPlatforms),
+          target.guildId,
+        )
       } catch (error) {
         this.logger.error(
           '推送失敗：platform=%s selfId=%s channelId=%s error=%s',
