@@ -4,6 +4,7 @@ import type { Context } from 'koishi'
 
 import type { UnknownRecord } from './types'
 import { asRecord, asString } from './types'
+import type { RequestDiagnostics } from './request-diagnostics'
 
 const AUTH_URL = 'https://abema.tv/api/auth/login/guest'
 const API_ORIGIN = 'https://api.p-c3-e.abema-tv.com'
@@ -13,6 +14,7 @@ const APPLICATION_KEY = 'v+Gjs=25Aw5erR!J8ZuvRrCx*rGswhB&qdHd_SYerEWdU&a?3DzN9BR
 
 export interface AbemaApiOptions {
   requestTimeout: number
+  diagnostics?: RequestDiagnostics
 }
 
 export interface AbemaModulesResponse extends UnknownRecord {
@@ -73,11 +75,14 @@ export class AbemaApiClient {
     url: string,
     params?: Record<string, string | number | boolean>,
   ): Promise<T> {
-    const request = async (): Promise<T> => this.http.get<T>(url, {
-      headers: this.authorizedHeaders(await this.getAccessToken()),
-      params,
-      timeout: this.options.requestTimeout * 1000,
-    })
+    const request = async (): Promise<T> => {
+      const send = async (): Promise<T> => this.http.get<T>(url, {
+        headers: this.authorizedHeaders(await this.getAccessToken()),
+        params,
+        timeout: this.options.requestTimeout * 1000,
+      })
+      return this.options.diagnostics?.run('ABEMA', 'GET', url, send) ?? send()
+    }
 
     try {
       return await request()
@@ -95,18 +100,25 @@ export class AbemaApiClient {
     }
 
     const target = applicationKeyDate()
-    const response = await this.http.post<GuestLoginResponse>(AUTH_URL, {
-      device_id: this.deviceId,
-      application_key_secret: generateApplicationKeySecret(this.deviceId, target),
-      device_type: 3,
-      previous_user_id: '',
-    }, {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
+    const send = (): Promise<GuestLoginResponse> => this.http.post<GuestLoginResponse>(
+      AUTH_URL,
+      {
+        device_id: this.deviceId,
+        application_key_secret: generateApplicationKeySecret(this.deviceId, target),
+        device_type: 3,
+        previous_user_id: '',
       },
-      timeout: this.options.requestTimeout * 1000,
-    })
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        timeout: this.options.requestTimeout * 1000,
+      },
+    )
+    const response = await (
+      this.options.diagnostics?.run('ABEMA Auth', 'POST', AUTH_URL, send) ?? send()
+    )
 
     const token = asString(response.access_token)
     if (!token) throw new Error('ABEMA 訪客授權未回傳存取權杖。')

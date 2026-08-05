@@ -1,6 +1,7 @@
 import type { Context } from 'koishi'
 
 import type { BahaIndexResponse } from './types'
+import type { RequestDiagnostics } from './request-diagnostics'
 
 const INDEX_URL = 'https://api.gamer.com.tw/mobile_app/anime/v3/index.php'
 
@@ -16,6 +17,7 @@ export interface GamerApiOptions {
   useMobileApi: boolean
   webUserAgent: string
   requestTimeout: number
+  diagnostics?: RequestDiagnostics
 }
 
 export class GamerApiClient {
@@ -29,10 +31,11 @@ export class GamerApiClient {
   }
 
   private getJson<T extends object>(url: string): Promise<T> {
-    return this.http.get<T>(url, {
+    const request = (): Promise<T> => this.http.get<T>(url, {
       headers: this.buildHeaders(),
       timeout: this.options.requestTimeout * 1000,
     })
+    return this.options.diagnostics?.run('Baha', 'GET', url, request) ?? request()
   }
 
   private buildHeaders(): Record<string, string> {

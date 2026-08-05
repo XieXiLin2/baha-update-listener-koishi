@@ -1,4 +1,5 @@
 import type { Context } from 'koishi'
+import type { RequestDiagnostics } from './request-diagnostics'
 
 const RELEASE_FEED_URL = 'https://www.crunchyroll.com/rss/anime'
 const CALENDAR_URL = 'https://www.crunchyroll.com/simulcastcalendar'
@@ -7,6 +8,7 @@ const ANNOUNCEMENT_FEED_URL = 'https://cr-news-api-service.prd.crunchyrollsvc.co
 export interface CrApiOptions {
   requestTimeout: number
   userAgent: string
+  diagnostics?: RequestDiagnostics
 }
 
 export interface CrScheduleResponse {
@@ -47,7 +49,7 @@ export class CrApiClient {
     url: string,
     params?: Record<string, string>,
   ): Promise<string> {
-    const response = await this.http.get<string>(url, {
+    const request = (): Promise<string> => this.http.get<string>(url, {
       headers: {
         Accept: 'text/html,application/xhtml+xml,application/xml,application/rss+xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -57,6 +59,9 @@ export class CrApiClient {
       responseType: 'text',
       timeout: this.options.requestTimeout * 1000,
     })
+    const response = await (
+      this.options.diagnostics?.run('CR', 'GET', url, request) ?? request()
+    )
     if (typeof response !== 'string') throw new TypeError('CR 來源未回傳文字內容。')
     if (/\bJust a moment\.\.\.|challenge-platform/i.test(response)) {
       throw new Error('CR 來源目前要求瀏覽器驗證。')

@@ -148,6 +148,7 @@ const config: Config = {
   targets: [],
   plainTextPlatforms: ['plain'],
   proxyUrl: 'socks5://127.0.0.1:1080',
+  enableRequestLogging: false,
   pollIntervalSeconds: 60,
   timezone: 'Asia/Taipei',
   useMobileApi: true,

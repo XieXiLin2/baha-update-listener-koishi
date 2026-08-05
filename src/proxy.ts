@@ -1,4 +1,6 @@
-import type { Context } from 'koishi'
+import type { Context, Logger } from 'koishi'
+
+import { describeProxy } from './request-diagnostics'
 
 const SUPPORTED_PROXY_PROTOCOLS = new Set([
   'http:',
@@ -26,24 +28,37 @@ interface ProxyAwareContext {
 export function createHttpClient(
   ctx: Context,
   proxyUrl: string,
+  logger?: Logger,
+  verbose = false,
 ): Context['http'] {
   const normalized = normalizeProxyUrl(proxyUrl)
-  if (!normalized) return ctx.http
+  if (!normalized) {
+    if (verbose) logger?.info('[proxy] mode=direct')
+    return ctx.http
+  }
 
-  assertProxySupport(ctx, normalized)
+  const autoLoaded = assertProxySupport(ctx, normalized)
+  logger?.info(
+    '[proxy] mode=enabled endpoint=%s provider=%s',
+    describeProxy(normalized),
+    autoLoaded ? 'auto-loaded' : 'existing',
+  )
   return (ctx.http as unknown as ProxyCapableHttp).extend({ proxyAgent: normalized })
 }
 
-export function assertProxySupport(ctx: Context, proxyUrl: string): void {
+export function assertProxySupport(ctx: Context, proxyUrl: string): boolean {
   let dispatcher = resolveProxyDispatcher(ctx, proxyUrl)
+  let autoLoaded = false
   if (!dispatcher) {
     ctx.plugin(require('@koishijs/plugin-proxy-agent'), { proxyAgent: '' })
+    autoLoaded = true
     dispatcher = resolveProxyDispatcher(ctx, proxyUrl)
   }
   if (!dispatcher) {
     throw new Error('無法啟用 Koishi 代理支援，已停止外部請求以避免繞過代理。')
   }
   void dispatcher.close()
+  return autoLoaded
 }
 
 function resolveProxyDispatcher(

@@ -10,6 +10,7 @@ import {
 } from './abema-formatters'
 import { buildAbemaUpdateMessage } from './abema-messages'
 import { formatOutboundMessage } from './outbound-message'
+import { formatSafeError } from './request-diagnostics'
 import type { StateStore } from './state'
 import type { PushTarget } from './types'
 
@@ -130,5 +131,5 @@ function uniqueTargets(targets: PushTarget[]): PushTarget[] {
 }
 
 function formatError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  return formatSafeError(error)
 }

@@ -43,6 +43,7 @@ import { buildAnnouncementMessage, buildBahaLatestMessage, buildScheduleMessage 
 import { formatOutboundMessage } from './outbound-message'
 import { PollerService } from './poller'
 import { createHttpClient } from './proxy'
+import { formatSafeError, RequestDiagnostics } from './request-diagnostics'
 import { StateStore } from './state'
 import { asRecord } from './types'
 
@@ -71,18 +72,31 @@ export function apply(ctx: Context, config: PluginConfig): void {
   assertValidTimezone(config.timezone)
 
   const logger = new Logger(name)
-  const http = createHttpClient(ctx, config.proxyUrl)
+  const http = createHttpClient(
+    ctx,
+    config.proxyUrl,
+    logger,
+    config.enableRequestLogging,
+  )
+  const diagnostics = new RequestDiagnostics(
+    logger,
+    config.proxyUrl,
+    config.enableRequestLogging,
+  )
   const api = new GamerApiClient(http, {
     useMobileApi: config.useMobileApi,
     webUserAgent: config.webUserAgent,
     requestTimeout: config.requestTimeoutSeconds,
+    diagnostics,
   })
   const abemaApi = new AbemaApiClient(http, {
     requestTimeout: config.requestTimeoutSeconds,
+    diagnostics,
   })
   const crApi = new CrApiClient(http, {
     requestTimeout: config.requestTimeoutSeconds,
     userAgent: config.webUserAgent,
+    diagnostics,
   })
   const stateFile = join(ctx.baseDir, 'data', name, 'state.json')
   const store = new StateStore(stateFile, logger)
@@ -325,5 +339,5 @@ function formatQueryError(error: unknown): string {
 }
 
 function formatError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  return formatSafeError(error)
 }

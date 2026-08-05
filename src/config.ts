@@ -6,6 +6,7 @@ export interface Config {
   targets: PushTarget[]
   plainTextPlatforms: string[]
   proxyUrl: string
+  enableRequestLogging: boolean
   pollIntervalSeconds: number
   timezone: string
   useMobileApi: boolean
@@ -46,6 +47,9 @@ export const Config: Schema<Config> = Schema.object({
     .role('secret')
     .default('')
     .description('外部請求使用的 HTTP、HTTPS、SOCKS5 或 SOCKS5H 代理網址；留空時直接連線。'),
+  enableRequestLogging: Schema.boolean()
+    .default(false)
+    .description('以資訊層級記錄外部請求流程與代理端點；不記錄憑證、查詢參數或回應內容。'),
   pollIntervalSeconds: Schema.number()
     .min(15)
     .max(86400)
