@@ -5,6 +5,7 @@ import {
   extractNewAnimeList,
   extractNewAnimeUpdates,
   extractSchedule,
+  formatOnAirItem,
   latestBahaReleases,
   newAnimeDigest,
   parseDayKey,
@@ -75,6 +76,17 @@ describe('ON AIR change detection', () => {
     ], 2)
 
     expect(latest.map((item) => item.videoSn)).toEqual([300, 200])
+  })
+
+  it('formats the update date as month and day', () => {
+    expect(formatOnAirItem({
+      videoSn: 100,
+      upTime: '2026-08-05 02:30:00',
+      upTimeHours: '02:30',
+    })).toMatchObject({
+      dateText: '08/05',
+      timeText: '02:30',
+    })
   })
 })
 

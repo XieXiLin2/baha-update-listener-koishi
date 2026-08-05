@@ -22,20 +22,25 @@ export function buildOnAirMessage(items: AnimeItem[]): h.Fragment {
 
 export function buildBahaLatestMessage(items: AnimeItem[]): h.Fragment {
   const content: h.Fragment = [h('b', {}, 'Baha 最近更新')]
-  appendOnAirItems(content, items)
+  appendOnAirItems(content, items, true)
   if (!items.length) content.push('\n- 目前沒有可顯示的更新')
   content.push('\n\n#baha')
   return content
 }
 
-function appendOnAirItems(content: Array<string | h>, items: AnimeItem[]): void {
+function appendOnAirItems(
+  content: Array<string | h>,
+  items: AnimeItem[],
+  includeDate = false,
+): void {
   for (const item of items) {
     const info = formatOnAirItem(item)
     if (!info.videoSn) continue
     const videoUrl = `https://ani.gamer.com.tw/animeVideo.php?sn=${encodeURIComponent(info.videoSn)}`
+    const updateTime = includeDate ? `${info.dateText} ${info.timeText}` : info.timeText
     content.push(
       '\n- ',
-      h('a', { href: videoUrl }, `[${info.timeText}] ${info.title}`),
+      h('a', { href: videoUrl }, `[${updateTime}] ${info.title}`),
       ' - ',
       h('a', { href: videoUrl }, info.volume),
     )

@@ -19,6 +19,7 @@ export interface OnAirItem {
   title: string
   animeSn: string
   videoSn: string
+  dateText: string
   timeText: string
   volume: string
 }
@@ -99,9 +100,16 @@ export function formatOnAirItem(item: AnimeItem): OnAirItem {
     title: asString(item.title) || '(無標題)',
     animeSn: asString(item.animeSn ?? item.anime_sn),
     videoSn: asString(item.videoSn ?? item.video_sn),
+    dateText: formatBahaDate(asString(item.upTime)),
     timeText: asString(item.upTimeHours) || '--:--',
     volume: asString(item.volume ?? item.volumeString) || '?',
   }
+}
+
+function formatBahaDate(value: string): string {
+  const match = /^(?:\d{4}[/-])?(\d{1,2})[/-](\d{1,2})/.exec(value)
+  if (!match) return '--/--'
+  return `${match[1].padStart(2, '0')}/${match[2].padStart(2, '0')}`
 }
 
 export function parseDayKey(raw?: string): DayKey | undefined {

@@ -108,6 +108,7 @@ describe('command surface', () => {
 
     const bahaLatestResult = await actions.get('baha.latest [limit:number]')?.({}, 10)
     expect(JSON.stringify(bahaLatestResult)).toContain('Baha latest update')
+    expect(JSON.stringify(bahaLatestResult)).toContain('[08/05 12:00]')
 
     const abemaResult = await actions.get('abema')?.()
     expect(JSON.stringify(abemaResult)).toContain('ABEMA root schedule')
