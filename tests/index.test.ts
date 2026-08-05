@@ -92,6 +92,7 @@ describe('command surface', () => {
     expect(commandNames).toEqual([
       'baha',
       'baha.announcement',
+      'baha.latest [limit:number]',
       'baha.schedule [day:string]',
       'abema',
       'abema.latest [limit:number]',
@@ -104,6 +105,9 @@ describe('command surface', () => {
 
     const bahaResult = await actions.get('baha')?.()
     expect(JSON.stringify(bahaResult)).toContain('Baha root schedule')
+
+    const bahaLatestResult = await actions.get('baha.latest [limit:number]')?.({}, 10)
+    expect(JSON.stringify(bahaLatestResult)).toContain('Baha latest update')
 
     const abemaResult = await actions.get('abema')?.()
     expect(JSON.stringify(abemaResult)).toContain('ABEMA root schedule')
@@ -142,6 +146,15 @@ function bahaIndexResponse() {
           [{ title: 'Baha root schedule', scheduleTime: '12:00' }],
         ]),
       ),
+      newAnime: {
+        date: [{
+          title: 'Baha latest update',
+          videoSn: 12345,
+          volume: '第 1 集',
+          upTime: '2026-08-05',
+          upTimeHours: '12:00',
+        }],
+      },
     },
   }
 }

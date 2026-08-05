@@ -83,6 +83,7 @@ crPollIntervalSeconds: 300
 | --- | --- |
 | `baha` | 檢視動畫瘋當日更新排程 |
 | `baha.announcement` | 檢視目前公告；別名 `announcement` |
+| `baha.latest [數量]` | 檢視動畫瘋最近已更新的動畫 |
 | `baha.schedule [星期]` | 檢視動畫瘋更新排程；別名 `schedule` |
 | `abema` | 檢視 ABEMA 當日新作動畫排程 |
 | `abema.latest [數量]` | 檢視目前排程中最近已更新的動畫 |

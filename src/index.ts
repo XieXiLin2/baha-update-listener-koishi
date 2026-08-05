@@ -33,10 +33,12 @@ import {
   assertValidTimezone,
   currentDayKey,
   extractAnnouncement,
+  extractNewAnimeList,
   extractSchedule,
+  latestBahaReleases,
   parseDayKey,
 } from './formatters'
-import { buildAnnouncementMessage, buildScheduleMessage } from './messages'
+import { buildAnnouncementMessage, buildBahaLatestMessage, buildScheduleMessage } from './messages'
 import { PollerService } from './poller'
 import { StateStore } from './state'
 import { asRecord } from './types'
@@ -51,6 +53,7 @@ export const usage = `
 可用指令：
 - baha
 - baha.announcement
+- baha.latest [數量]
 - baha.schedule [1-7/星期]
 - abema
 - abema.latest [數量]
@@ -159,6 +162,23 @@ export function apply(ctx: Context, config: PluginConfig): void {
         return announcement ? buildAnnouncementMessage(announcement) : '目前沒有公告。'
       } catch (error) {
         logger.warn('查詢公告失敗：%s', formatError(error))
+        return formatQueryError(error)
+      }
+    })
+
+  ctx.command('baha.latest [limit:number]', '檢視動畫瘋最近更新')
+    .example('baha.latest')
+    .example('baha.latest 10')
+    .action(async (_, rawLimit) => {
+      const limit = normalizeLimit(rawLimit, 10, config.maxScheduleItems)
+      try {
+        const updates = latestBahaReleases(
+          extractNewAnimeList(await api.fetchIndex()),
+          limit,
+        )
+        return buildBahaLatestMessage(updates)
+      } catch (error) {
+        logger.warn('查詢動畫瘋最近更新失敗：%s', formatError(error))
         return formatQueryError(error)
       }
     })

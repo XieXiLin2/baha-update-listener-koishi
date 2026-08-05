@@ -88,6 +88,12 @@ export function sortOnAirItems(items: AnimeItem[]): AnimeItem[] {
   })
 }
 
+export function latestBahaReleases(items: AnimeItem[], limit: number): AnimeItem[] {
+  return sortOnAirItems(items)
+    .filter((item) => asString(item.videoSn ?? item.video_sn))
+    .slice(0, limit)
+}
+
 export function formatOnAirItem(item: AnimeItem): OnAirItem {
   return {
     title: asString(item.title) || '(無標題)',

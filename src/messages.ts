@@ -15,6 +15,20 @@ export function buildAnnouncementMessage(announcement: string): h.Fragment {
 
 export function buildOnAirMessage(items: AnimeItem[]): h.Fragment {
   const content: h.Fragment = [h('b', {}, 'ON AIR >> [Baha]'), '\n']
+  appendOnAirItems(content, items)
+  content.push('\n\n#baha')
+  return content
+}
+
+export function buildBahaLatestMessage(items: AnimeItem[]): h.Fragment {
+  const content: h.Fragment = [h('b', {}, 'Baha 最近更新')]
+  appendOnAirItems(content, items)
+  if (!items.length) content.push('\n- 目前沒有可顯示的更新')
+  content.push('\n\n#baha')
+  return content
+}
+
+function appendOnAirItems(content: Array<string | h>, items: AnimeItem[]): void {
   for (const item of items) {
     const info = formatOnAirItem(item)
     if (!info.videoSn) continue
@@ -26,8 +40,6 @@ export function buildOnAirMessage(items: AnimeItem[]): h.Fragment {
       h('a', { href: videoUrl }, info.volume),
     )
   }
-  content.push('\n\n#baha')
-  return content
 }
 
 export function buildScheduleMessage(

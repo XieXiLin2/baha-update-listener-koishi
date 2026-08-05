@@ -5,6 +5,7 @@ import {
   extractNewAnimeList,
   extractNewAnimeUpdates,
   extractSchedule,
+  latestBahaReleases,
   newAnimeDigest,
   parseDayKey,
 } from '../src/formatters'
@@ -63,6 +64,17 @@ describe('ON AIR change detection', () => {
       ],
     )
     expect(updates.map((item) => item.videoSn)).toEqual([200, 300])
+  })
+
+  it('returns the newest playable entries up to the requested limit', () => {
+    const latest = latestBahaReleases([
+      { videoSn: 100, title: '作品 A', upTime: '2026-08-04', upTimeHours: '20:00' },
+      { title: '沒有影片', upTime: '2026-08-05', upTimeHours: '23:00' },
+      { videoSn: 300, title: '作品 C', upTime: '2026-08-05', upTimeHours: '21:00' },
+      { videoSn: 200, title: '作品 B', upTime: '2026-08-05', upTimeHours: '18:00' },
+    ], 2)
+
+    expect(latest.map((item) => item.videoSn)).toEqual([300, 200])
   })
 })
 
