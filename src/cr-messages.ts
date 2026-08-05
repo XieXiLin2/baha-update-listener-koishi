@@ -9,7 +9,7 @@ export function buildCrUpdateMessage(
   timezone: string,
 ): h.Fragment {
   const content: h.Fragment = [h('b', {}, 'ON AIR >> [CR]'), '\n']
-  appendCrAnimeItems(content, items, maxItems, timezone)
+  appendCrAnimeItems(content, items, maxItems, timezone, false)
   content.push('\n\n#cr')
   return content
 }
@@ -61,13 +61,14 @@ function appendCrAnimeItems(
   items: CrAnimeItem[],
   maxItems: number,
   timezone: string,
+  includeDate = true,
 ): void {
   for (const item of items.slice(0, maxItems)) {
     const title = item.seriesTitle || item.title || '(無標題)'
     const episode = item.episodeNumber
       ? `第 ${item.episodeNumber} 集`
       : item.episodeTitle || ''
-    const label = `[${formatCrTime(item.releaseAt, timezone)}] ${title}${episode ? ` - ${episode}` : ''}`
+    const label = `[${formatCrTime(item.releaseAt, timezone, includeDate)}] ${title}${episode ? ` - ${episode}` : ''}`
     const availability = item.availability === 'free'
       ? ' [免費]'
       : item.availability === 'premium' ? ' [會員]' : ''

@@ -9,7 +9,7 @@ export function buildAbemaUpdateMessage(
   timezone: string,
 ): h.Fragment {
   const content: h.Fragment = [h('b', {}, 'ON AIR >> [ABEMA]'), '\n']
-  appendAnimeItems(content, items, maxItems, timezone)
+  appendAnimeItems(content, items, maxItems, timezone, false)
   content.push('\n\n#abema')
   return content
 }
@@ -42,6 +42,7 @@ function appendAnimeItems(
   items: AbemaAnimeItem[],
   maxItems: number,
   timezone: string,
+  includeDate = true,
 ): void {
   for (const item of items.slice(0, maxItems)) {
     const href = item.episodeId
@@ -53,7 +54,7 @@ function appendAnimeItems(
     const badge = item.badge ? ` [${item.badge}]` : ''
     content.push(
       '\n- ',
-      h('a', { href }, `[${formatAbemaTime(item.releaseAt, timezone)}] ${item.title}`),
+      h('a', { href }, `[${formatAbemaTime(item.releaseAt, timezone, includeDate)}] ${item.title}`),
       availability,
       badge,
     )

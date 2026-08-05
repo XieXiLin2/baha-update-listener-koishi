@@ -103,8 +103,20 @@ export function latestAbemaReleases(
     .slice(0, limit)
 }
 
-export function formatAbemaTime(timestamp: number, timezone: string): string {
+export function formatAbemaTime(
+  timestamp: number,
+  timezone: string,
+  includeDate = true,
+): string {
   if (!timestamp) return '--:--'
+  if (!includeDate) {
+    return new Intl.DateTimeFormat('zh-TW', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).format(new Date(timestamp))
+  }
   return new Intl.DateTimeFormat('zh-TW', {
     timeZone: timezone,
     month: '2-digit',
