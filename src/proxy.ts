@@ -35,15 +35,26 @@ export function createHttpClient(
 }
 
 export function assertProxySupport(ctx: Context, proxyUrl: string): void {
-  const dispatcher = (ctx as unknown as ProxyAwareContext).bail(
+  let dispatcher = resolveProxyDispatcher(ctx, proxyUrl)
+  if (!dispatcher) {
+    ctx.plugin(require('@koishijs/plugin-proxy-agent'), { proxyAgent: '' })
+    dispatcher = resolveProxyDispatcher(ctx, proxyUrl)
+  }
+  if (!dispatcher) {
+    throw new Error('無法啟用 Koishi 代理支援，已停止外部請求以避免繞過代理。')
+  }
+  void dispatcher.close()
+}
+
+function resolveProxyDispatcher(
+  ctx: Context,
+  proxyUrl: string,
+): ProxyDispatcher | undefined {
+  return (ctx as unknown as ProxyAwareContext).bail(
     'http/dispatcher',
     new URL(proxyUrl),
     new URL('https://example.com/'),
   )
-  if (!dispatcher) {
-    throw new Error('Koishi 代理支援未啟用，已停止外部請求以避免繞過代理。請啟用 proxy-agent 插件。')
-  }
-  void dispatcher.close()
 }
 
 export function normalizeProxyUrl(value: string): string {
